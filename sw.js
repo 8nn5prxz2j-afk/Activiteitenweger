@@ -1,4 +1,4 @@
-const CACHE_NAME = 'activiteitenweger-v4';
+const CACHE_NAME = 'activiteitenweger-v5';
 // Use relative paths so it works both locally and on GitHub Pages
 const ASSETS = [
   './',
