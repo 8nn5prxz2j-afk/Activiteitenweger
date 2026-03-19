@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Activiteitenweger</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a237e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Activiteiten">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- SheetJS for Excel export (loaded from CDN) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="navbar"></nav>
+
+  <!-- Main Content Area -->
+  <div class="app-body" id="appBody"></div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Ontspanning (-1/½u)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> Licht (+1/½u)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Gemiddeld (+2/½u)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Zwaar (+3/½u)</div>
+  </div>
+
+  <!-- Activity Add/Edit Modal -->
+  <div class="modal-overlay" id="modal" onclick="if(event.target===this)App.closeModal()">
+    <div class="modal">
+      <h2 id="modalTitle">Activiteit toevoegen</h2>
+      <div class="form-group">
+        <label>Activiteit</label>
+        <select id="actSelect" onchange="App.updateModalPreview()">
+          <option value="">-- Kies een activiteit --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Starttijd</label>
+          <input type="time" id="actStart" step="900">
+        </div>
+        <div class="form-group">
+          <label>Duur</label>
+          <select id="actDuration" onchange="App.updateModalPreview()">
+            <option value="15">15 min</option>
+            <option value="30" selected>30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">1 uur</option>
+            <option value="75">1u15</option>
+            <option value="90">1u30</option>
+            <option value="105">1u45</option>
+            <option value="120">2 uur</option>
+            <option value="135">2u15</option>
+            <option value="150">2u30</option>
+            <option value="165">2u45</option>
+            <option value="180">3 uur</option>
+            <option value="210">3u30</option>
+            <option value="240">4 uur</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="previewPoints" style="font-size:14px;font-weight:500;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="btnDelete" style="display:none;margin-right:auto;" onclick="App.deleteModal()">Verwijder</button>
+        <button class="btn btn-secondary" onclick="App.closeModal()">Annuleren</button>
+        <button class="btn btn-primary" onclick="App.saveModal()">Opslaan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts (order matters) -->
+  <script src="js/data.js"></script>
+  <script src="js/seed-data.js"></script>
+  <script>loadSeedData();</script>
+  <script src="js/day-view.js"></script>
+  <script src="js/week-view.js"></script>
+  <script src="js/month-view.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/excel-export.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Populate activity select -->
+  <script>
+    const sel = document.getElementById('actSelect');
+    categories.forEach(cat => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = cat.group;
+      cat.items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.textContent = `${item.name} (${item.ptsPerHalf > 0 ? '+' : ''}${item.ptsPerHalf}/½u)`;
+        optgroup.appendChild(opt);
+      });
+      sel.appendChild(optgroup);
+    });
+  </script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
