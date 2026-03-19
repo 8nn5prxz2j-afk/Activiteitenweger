@@ -40,6 +40,7 @@ const categories = [
   { group: "🚶 Beweging", items: [
     { name: "Wandelen", weight: "Zwaar", ptsPerHalf: 3 },
     { name: "Wandelen met Milo", weight: "Gemiddeld", ptsPerHalf: 2 },
+    { name: "Revalidatie", weight: "Zwaar", ptsPerHalf: 3 },
   ]},
   { group: "🍽️ Verzorging & routine", items: [
     { name: "Ochtendritueel", weight: "Gemiddeld", ptsPerHalf: 2 },
