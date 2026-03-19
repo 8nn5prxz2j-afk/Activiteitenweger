@@ -117,12 +117,8 @@ body {
 /* Day view layout with sidebar */
 .day-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 260px 1fr;
   height: 100%;
-}
-
-@media (min-width: 1200px) {
-  .day-layout { grid-template-columns: 340px 1fr; }
 }
 
 /* ---- Sidebar ---- */
@@ -707,12 +703,6 @@ body {
 
 .stat-value {
   font-size: 18px;
-}
-
-/* Wider layouts: 3 columns */
-@media (min-width: 900px) {
-  .stats-grid { grid-template-columns: repeat(3, 1fr); }
-  .stat-card .stat-value { font-size: 22px; }
 }
 
 .stat-card.stat-highlight {
