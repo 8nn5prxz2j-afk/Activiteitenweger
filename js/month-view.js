@@ -70,7 +70,14 @@ const MonthView = {
     container.innerHTML = `
       <div class="month-view">
         <div class="month-grid">${cellsHtml}</div>
-        <div class="month-stats-area">${Stats.renderOverviewTable()}</div>
+        <div class="stats-toggle-area">
+          <button class="stats-toggle-btn" onclick="MonthView.toggleStats()">
+            📊 Statistieken <span id="statsArrow">▶</span>
+          </button>
+          <div class="stats-collapsible" id="monthStats" style="display:none">
+            ${Stats.renderOverviewTable()}
+          </div>
+        </div>
       </div>
     `;
   },
@@ -78,6 +85,18 @@ const MonthView = {
   getTitle() {
     if (this.month === null) return '';
     return `${NL_MONTHS[this.month]} ${this.year}`;
+  },
+
+  toggleStats() {
+    const el = document.getElementById('monthStats');
+    const arrow = document.getElementById('statsArrow');
+    if (el.style.display === 'none') {
+      el.style.display = 'block';
+      arrow.textContent = '▼';
+    } else {
+      el.style.display = 'none';
+      arrow.textContent = '▶';
+    }
   },
 
   navigate(dir) {

@@ -8,7 +8,20 @@ const App = {
 
   init() {
     this.renderNav();
-    this.navigate('month', new Date());
+    // Start at the most recent day with data, or today
+    const days = getSavedDays();
+    let startDate = new Date();
+    if (days.length > 0) {
+      const lastDay = days[days.length - 1];
+      const todayKey = todayStr();
+      // If there's no data for this month, jump to the last month with data
+      const thisMonth = todayKey.substring(0, 7);
+      const hasThisMonth = days.some(d => d.startsWith(thisMonth));
+      if (!hasThisMonth) {
+        startDate = parseDate(lastDay);
+      }
+    }
+    this.navigate('month', startDate);
 
     // Now-line timer
     setInterval(() => {
