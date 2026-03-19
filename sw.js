@@ -1,4 +1,4 @@
-const CACHE_NAME = 'activiteitenweger-v6';
+const CACHE_NAME = 'activiteitenweger-v7';
 // Use relative paths so it works both locally and on GitHub Pages
 const ASSETS = [
   './',
@@ -32,14 +32,15 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Network-first for CDN resources, cache-first for local
-  if (e.request.url.includes('cdn.sheetjs.com')) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-  } else {
-    e.respondWith(
-      caches.match(e.request).then(r => r || fetch(e.request))
-    );
-  }
+  // Network-first for everything: try network, fall back to cache
+  e.respondWith(
+    fetch(e.request).then(response => {
+      // Update cache with fresh response
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      }
+      return response;
+    }).catch(() => caches.match(e.request))
+  );
 });
