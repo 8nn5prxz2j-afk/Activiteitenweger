@@ -9,22 +9,16 @@ const SEED_ENERGY = {"2026-03-06":840,"2026-03-07":930,"2026-03-10":975,"2026-03
 
 function loadSeedData() {
   const SEED_KEY = 'activiteitenweger_seeded';
-  if (localStorage.getItem(SEED_KEY)) return; // Already seeded
-
-  // Check if URL has ?seed=1 parameter OR if this is the original user (has existing data)
   const urlParams = new URLSearchParams(window.location.search);
   const hasSeedParam = urlParams.get('seed') === '1';
-  const hasExistingData = Object.keys(getAllData()).length > 0;
 
-  // Only auto-seed if explicitly requested via URL param
-  // New users get a clean slate
-  if (!hasSeedParam && !hasExistingData) {
-    // Mark as seeded so we don't ask again
+  // ?seed=1 always forces a (re-)seed, even if already seeded before
+  if (!hasSeedParam) {
+    if (localStorage.getItem(SEED_KEY)) return;
+    // First visit without ?seed=1 — mark as seen, give clean slate
     localStorage.setItem(SEED_KEY, '1');
     return;
   }
-
-  if (!hasSeedParam) return;
 
   // Merge seed data (don't overwrite existing)
   const existing = getAllData();
