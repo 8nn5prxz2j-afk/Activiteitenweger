@@ -1,17 +1,18 @@
-const CACHE_NAME = 'activiteitenweger-v3';
+const CACHE_NAME = 'activiteitenweger-v4';
+// Use relative paths so it works both locally and on GitHub Pages
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/data.js',
-  '/js/seed-data.js',
-  '/js/day-view.js',
-  '/js/week-view.js',
-  '/js/month-view.js',
-  '/js/stats.js',
-  '/js/excel-export.js',
-  '/js/app.js',
-  '/manifest.json',
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/data.js',
+  './js/seed-data.js',
+  './js/day-view.js',
+  './js/week-view.js',
+  './js/month-view.js',
+  './js/stats.js',
+  './js/excel-export.js',
+  './js/app.js',
+  './manifest.json',
 ];
 
 self.addEventListener('install', (e) => {
