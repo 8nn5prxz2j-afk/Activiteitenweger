@@ -117,8 +117,12 @@ body {
 /* Day view layout with sidebar */
 .day-layout {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 280px 1fr;
   height: 100%;
+}
+
+@media (min-width: 1200px) {
+  .day-layout { grid-template-columns: 340px 1fr; }
 }
 
 /* ---- Sidebar ---- */
@@ -675,9 +679,10 @@ body {
 .stats-panel {
   background: var(--surface);
   border-radius: 10px;
-  padding: 16px;
+  padding: 12px;
   margin: 12px 0;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
 
 .stats-title {
@@ -689,15 +694,25 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 .stat-card {
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 8px 6px;
   text-align: center;
+}
+
+.stat-value {
+  font-size: 18px;
+}
+
+/* Wider layouts: 3 columns */
+@media (min-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .stat-card .stat-value { font-size: 22px; }
 }
 
 .stat-card.stat-highlight {
@@ -710,7 +725,6 @@ body {
 .stat-card.stat-na { opacity: 0.5; }
 
 .stat-value {
-  font-size: 22px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
