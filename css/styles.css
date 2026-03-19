@@ -334,6 +334,30 @@ body {
   50% { outline-color: transparent; }
 }
 
+/* Energy placement mode — crosshair cursor on everything */
+.timeline.energy-placing,
+.timeline.energy-placing .slot-area,
+.timeline.energy-placing .activity-block {
+  cursor: crosshair !important;
+}
+.timeline.energy-placing .activity-block {
+  opacity: 0.7;
+}
+.timeline.energy-placing::before {
+  content: '⚡ Klik waar je het energiepeil wilt plaatsen';
+  position: sticky;
+  top: 0;
+  display: block;
+  background: linear-gradient(135deg, #f44336, #ff7043);
+  color: white;
+  text-align: center;
+  padding: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 10;
+  border-radius: 0 0 8px 8px;
+}
+
 /* Week view energy marker */
 .week-energy-line {
   position: absolute;

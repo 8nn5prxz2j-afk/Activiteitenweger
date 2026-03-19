@@ -98,7 +98,19 @@ const DayView = {
       div.className = `activity-block cat-${info.weight}`;
       div.style.top = top + 'px';
       div.style.height = Math.max(height, 24) + 'px';
-      div.onclick = (e) => { e.stopPropagation(); DayView.openEditModal(act.id); };
+      div.onclick = (e) => {
+        e.stopPropagation();
+        if (DayView.placingEnergyMarker) {
+          // Calculate minutes from click position within the activity block
+          const rect = div.getBoundingClientRect();
+          const relY = e.clientY - rect.top;
+          const slotsIntoBlock = Math.floor(relY / SLOT_HEIGHT);
+          const minutes = act.startMinutes + slotsIntoBlock * 15;
+          DayView.placeEnergyMarker(minutes);
+          return;
+        }
+        DayView.openEditModal(act.id);
+      };
 
       const meta = `${formatTime(act.startMinutes)} – ${formatTime(act.startMinutes + act.durationMinutes)} · ${formatDuration(act.durationMinutes)} · ${pts > 0 ? '+' : ''}${pts} pt`;
 
@@ -156,12 +168,14 @@ const DayView = {
     }
     this.placingEnergyMarker = !this.placingEnergyMarker;
     document.getElementById('energyBtn')?.classList.toggle('active', this.placingEnergyMarker);
+    document.getElementById('timeline')?.classList.toggle('energy-placing', this.placingEnergyMarker);
   },
 
   placeEnergyMarker(minutes) {
     setEnergyMarker(this.dayKey, minutes);
     this.placingEnergyMarker = false;
     document.getElementById('energyBtn')?.classList.remove('active');
+    document.getElementById('timeline')?.classList.remove('energy-placing');
     this.renderActivities();
   },
 
