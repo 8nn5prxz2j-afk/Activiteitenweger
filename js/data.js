@@ -126,6 +126,7 @@ function getAllData() {
 
 function saveAllData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  if (typeof Sync !== 'undefined') Sync.pushDebounced();
 }
 
 function getDayActivities(dayKey) {
@@ -162,6 +163,7 @@ function setEnergyMarker(dayKey, minutes) {
     data[dayKey] = minutes;
   }
   localStorage.setItem(ENERGY_STORAGE_KEY, JSON.stringify(data));
+  if (typeof Sync !== 'undefined') Sync.pushDebounced();
 }
 
 function calcPointsUntil(dayKey, untilMinutes) {

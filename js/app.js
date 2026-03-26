@@ -21,6 +21,7 @@ const App = {
         startDate = parseDate(lastDay);
       }
     }
+    Sync.updateUI();
     this.navigate('month', startDate);
 
     // Now-line timer
@@ -65,6 +66,8 @@ const App = {
         Dagtotaal: <span id="dayTotal">0</span> pt
         <span id="ebBadge" style="margin-left:8px;opacity:0.8">| EB: <span id="ebValue">0</span></span>
       </span>
+      <span id="syncStatus"></span>
+      <button class="nav-sync-btn" onclick="App.openSyncModal()">🔄 Sync</button>
       <div class="nav-group">
         <button class="nav-export-btn" onclick="ExcelExport.exportAll()">📥 Excel</button>
         <button class="nav-export-btn" onclick="exportDataAsJSON()">💾 Backup</button>
@@ -227,7 +230,27 @@ const App = {
     }
     this.closeModal();
   },
+
+  openSyncModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'syncModal';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>🔄 Synchronisatie</h2>
+        ${Sync.renderSyncPanel()}
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="document.getElementById('syncModal').remove()">Sluiten</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  },
 };
 
 // Init on DOM ready
-document.addEventListener('DOMContentLoaded', () => App.init());
+document.addEventListener('DOMContentLoaded', () => {
+  Sync.init();
+  App.init();
+});
