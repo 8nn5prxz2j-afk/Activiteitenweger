@@ -1,4 +1,4 @@
-const CACHE_NAME = 'activiteitenweger-v14';
+const CACHE_NAME = 'activiteitenweger-v15';
 // Use relative paths so it works both locally and on GitHub Pages
 const ASSETS = [
   './',
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/stats.js',
   './js/excel-export.js',
   './js/chart-view.js',
+  './js/sync.js',
   './js/app.js',
   './manifest.json',
 ];
