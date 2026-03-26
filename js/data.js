@@ -214,3 +214,61 @@ function formatDateLong(date) {
 function formatDateShort(date) {
   return `${date.getDate()} ${NL_MONTHS[date.getMonth()].substring(0, 3)}`;
 }
+
+// ---- Data Import / Export (for sync between devices) ----
+
+function exportDataAsJSON() {
+  const data = {
+    activities: getAllData(),
+    energy: JSON.parse(localStorage.getItem(ENERGY_STORAGE_KEY) || '{}'),
+    exportDate: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `activiteitenweger_backup_${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importDataFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      // Merge activities (don't overwrite existing days)
+      const existing = getAllData();
+      let imported = 0;
+      for (const [key, acts] of Object.entries(data.activities || {})) {
+        if (!existing[key] || existing[key].length === 0) {
+          existing[key] = acts;
+          imported++;
+        }
+      }
+      saveAllData(existing);
+
+      // Merge energy markers
+      for (const [key, mins] of Object.entries(data.energy || {})) {
+        if (getEnergyMarker(key) === null) {
+          setEnergyMarker(key, mins);
+        }
+      }
+
+      alert(`Import geslaagd! ${imported} nieuwe dagen toegevoegd.`);
+
+      // Refresh the current view
+      App.navigate(App.currentView);
+    } catch (err) {
+      alert('Fout bij importeren: ongeldig bestand.');
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // reset for re-import
+}

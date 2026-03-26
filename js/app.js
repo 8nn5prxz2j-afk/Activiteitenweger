@@ -64,7 +64,14 @@ const App = {
         Dagtotaal: <span id="dayTotal">0</span> pt
         <span id="ebBadge" style="margin-left:8px;opacity:0.8">| EB: <span id="ebValue">0</span></span>
       </span>
-      <button class="nav-export-btn" onclick="ExcelExport.exportAll()">📥 Excel</button>
+      <div class="nav-group">
+        <button class="nav-export-btn" onclick="ExcelExport.exportAll()">📥 Excel</button>
+        <button class="nav-export-btn" onclick="exportDataAsJSON()">💾 Backup</button>
+        <label class="nav-export-btn nav-import-label">
+          📂 Herstel
+          <input type="file" accept=".json" style="display:none" onchange="importDataFromFile(this)">
+        </label>
+      </div>
     `;
   },
 
