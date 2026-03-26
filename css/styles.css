@@ -107,6 +107,7 @@ body {
   white-space: nowrap;
 }
 .nav-export-btn:hover { background: rgba(76,175,80,0.5); }
+.nav-import-label { cursor: pointer; display: inline-block; }
 
 /* ---- Main Layout ---- */
 .app-body {
@@ -323,40 +324,37 @@ body {
   white-space: nowrap;
 }
 .energy-btn:hover { filter: brightness(1.1); }
-.energy-btn.active {
+.energy-btn.has-marker {
   outline: 2px solid #f44336;
   outline-offset: 2px;
-  animation: pulse-energy 1.5s infinite;
 }
 
-@keyframes pulse-energy {
-  0%, 100% { outline-color: #f44336; }
-  50% { outline-color: transparent; }
+/* Energy time picker panel */
+.energy-panel {
+  padding: 8px 12px;
+  background: #FFF3E0;
+  border-bottom: 1px solid var(--border);
 }
-
-/* Energy placement mode — crosshair cursor on everything */
-.timeline.energy-placing,
-.timeline.energy-placing .slot-area,
-.timeline.energy-placing .activity-block {
-  cursor: crosshair !important;
-}
-.timeline.energy-placing .activity-block {
-  opacity: 0.7;
-}
-.timeline.energy-placing::before {
-  content: '⚡ Klik waar je het energiepeil wilt plaatsen';
-  position: sticky;
-  top: 0;
-  display: block;
-  background: linear-gradient(135deg, #f44336, #ff7043);
-  color: white;
-  text-align: center;
-  padding: 6px;
-  font-size: 13px;
+.energy-panel label {
+  font-size: 11px;
   font-weight: 600;
-  z-index: 10;
-  border-radius: 0 0 8px 8px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 4px;
 }
+.energy-panel-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.energy-panel-row input[type="time"] {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+}
+.btn-sm { padding: 5px 10px; font-size: 12px; }
 
 /* Week view energy marker */
 .week-energy-line {

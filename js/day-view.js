@@ -8,18 +8,35 @@ const DayView = {
   editingId: null,
   dragActivity: null,
   resizing: null,
-  placingEnergyMarker: false,
-
   render(container, dayKey) {
     this.dayKey = dayKey;
     this.activities = getDayActivities(dayKey);
+
+    // Pre-fill energy time suggestion
+    let suggestedTime = '12:00';
+    if (this.activities.length > 0) {
+      const sorted = [...this.activities].sort((a, b) => a.startMinutes - b.startMinutes);
+      const first = sorted[0].startMinutes;
+      const last = sorted[sorted.length - 1];
+      const mid = Math.round((first + last.startMinutes + last.durationMinutes) / 2 / 15) * 15;
+      suggestedTime = formatTime(mid);
+    }
+    const hasMarker = getEnergyMarker(dayKey) !== null;
 
     container.innerHTML = `
       <div class="day-layout">
         <div class="sidebar" id="sidebar">
           <div class="sidebar-toolbar">
             <button class="btn btn-secondary" onclick="DayView.clearDay()">Dag wissen</button>
-            <button class="energy-btn" id="energyBtn" onclick="DayView.toggleEnergyMode()">⚡ Energiepeil</button>
+            <button class="energy-btn ${hasMarker ? 'has-marker' : ''}" id="energyBtn" onclick="DayView.toggleEnergyPanel()">⚡ Energiepeil</button>
+          </div>
+          <div class="energy-panel" id="energyPanel" style="display:none">
+            <label>Tijdstip energiepeil:</label>
+            <div class="energy-panel-row">
+              <input type="time" id="energyTimeInput" step="900" value="${suggestedTime}">
+              <button class="btn btn-primary btn-sm" onclick="DayView.placeEnergyFromPicker()">Plaats</button>
+              <button class="btn btn-secondary btn-sm" onclick="DayView.closeEnergyPanel()">Annuleer</button>
+            </div>
           </div>
           <div id="dayStatsPanel"></div>
           <div id="categoryList"></div>
@@ -100,15 +117,6 @@ const DayView = {
       div.style.height = Math.max(height, 24) + 'px';
       div.onclick = (e) => {
         e.stopPropagation();
-        if (DayView.placingEnergyMarker) {
-          // Calculate minutes from click position within the activity block
-          const rect = div.getBoundingClientRect();
-          const relY = e.clientY - rect.top;
-          const slotsIntoBlock = Math.floor(relY / SLOT_HEIGHT);
-          const minutes = act.startMinutes + slotsIntoBlock * 15;
-          DayView.placeEnergyMarker(minutes);
-          return;
-        }
         DayView.openEditModal(act.id);
       };
 
@@ -149,7 +157,7 @@ const DayView = {
     marker.style.top = top + 'px';
     marker.innerHTML = `
       <div class="energy-marker-label" title="Klik om te verwijderen">
-        ⚡ Energiepeil op — Subtotaal: ${fmtPts} punten
+        ⚡ Energiepeil op ${formatTime(markerMins)} — Subtotaal: ${fmtPts} punten
         <span class="energy-marker-remove" onclick="DayView.removeEnergyMarker()">✕</span>
       </div>
       <div class="energy-marker-line"></div>
@@ -157,30 +165,35 @@ const DayView = {
     timeline.appendChild(marker);
   },
 
-  toggleEnergyMode() {
+  toggleEnergyPanel() {
     const existing = getEnergyMarker(this.dayKey);
     if (existing !== null) {
-      // Already have one — toggle it off
       if (confirm('Wil je de energiepeil-markering verwijderen?')) {
         this.removeEnergyMarker();
       }
       return;
     }
-    this.placingEnergyMarker = !this.placingEnergyMarker;
-    document.getElementById('energyBtn')?.classList.toggle('active', this.placingEnergyMarker);
-    document.getElementById('timeline')?.classList.toggle('energy-placing', this.placingEnergyMarker);
+    const panel = document.getElementById('energyPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
   },
 
-  placeEnergyMarker(minutes) {
+  placeEnergyFromPicker() {
+    const timeInput = document.getElementById('energyTimeInput');
+    const [h, m] = timeInput.value.split(':').map(Number);
+    const minutes = h * 60 + m;
     setEnergyMarker(this.dayKey, minutes);
-    this.placingEnergyMarker = false;
-    document.getElementById('energyBtn')?.classList.remove('active');
-    document.getElementById('timeline')?.classList.remove('energy-placing');
+    document.getElementById('energyPanel').style.display = 'none';
+    document.getElementById('energyBtn')?.classList.add('has-marker');
     this.renderActivities();
+  },
+
+  closeEnergyPanel() {
+    document.getElementById('energyPanel').style.display = 'none';
   },
 
   removeEnergyMarker() {
     setEnergyMarker(this.dayKey, null);
+    document.getElementById('energyBtn')?.classList.remove('has-marker');
     this.renderActivities();
   },
 
@@ -242,11 +255,6 @@ const DayView = {
   // ---- Slot click ----
   onSlotClick(e, minutes) {
     if (e.target.closest('.activity-block') || e.target.closest('.energy-marker')) return;
-    // Energy marker placement mode
-    if (this.placingEnergyMarker) {
-      this.placeEnergyMarker(minutes);
-      return;
-    }
     this.editingId = null;
     App.openModal({ startMinutes: minutes });
   },
