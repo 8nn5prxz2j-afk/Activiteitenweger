@@ -81,29 +81,34 @@ const Stats = {
   renderStatsPanel(dayKey) {
     const s = this.getDaySummary(dayKey);
 
+    const baseline = 20;
+    const diff = s.dagtotaal - baseline;
+    const diffStr = diff >= 0 ? `+${this.fmt(diff)}` : this.fmt(diff);
+    const diffColor = diff <= 0 ? '#4CAF50' : '#f44336';
+
     return `
       <div class="stats-panel">
         <div class="stats-title">📊 Statistieken</div>
         <div class="stats-grid">
-          <div class="stat-card">
+          <div class="stat-card stat-highlight">
             <div class="stat-value">${this.fmt(s.dagtotaal)}</div>
             <div class="stat-label">Dagtotaal</div>
           </div>
-          <div class="stat-card ${s.energySub !== null ? '' : 'stat-na'}">
-            <div class="stat-value">${s.energySub !== null ? this.fmt(s.energySub) : '—'}</div>
-            <div class="stat-label">⚡ Bij energiestreep</div>
-          </div>
-          <div class="stat-card stat-highlight">
-            <div class="stat-value">${this.fmt(s.energiebalans)}</div>
-            <div class="stat-label">Energiebalans</div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:${diffColor}">${diffStr}</div>
+            <div class="stat-label">vs. basis (20)</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${this.fmt(s.runAvgTotal)}</div>
             <div class="stat-label">Gem. dagtotaal</div>
           </div>
+          <div class="stat-card ${s.energySub !== null ? '' : 'stat-na'}">
+            <div class="stat-value">${s.energySub !== null ? this.fmt(s.energySub) : '—'}</div>
+            <div class="stat-label">⚡ Bij energiestreep</div>
+          </div>
           <div class="stat-card">
-            <div class="stat-value">${this.fmt(s.runAvgEB)}</div>
-            <div class="stat-label">Gem. energiebalans</div>
+            <div class="stat-value">${this.fmt(s.energiebalans)}</div>
+            <div class="stat-label">Energiebalans</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${s.weekAvgEB !== null ? this.fmt(s.weekAvgEB) : '—'}</div>

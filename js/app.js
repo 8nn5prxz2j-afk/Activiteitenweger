@@ -59,6 +59,7 @@ const App = {
         <button class="nav-btn" id="btnMonth" onclick="App.navigate('month')">Maand</button>
         <button class="nav-btn" id="btnWeek" onclick="App.navigate('week')">Week</button>
         <button class="nav-btn" id="btnDay" onclick="App.navigate('day')">Dag</button>
+        <button class="nav-btn" id="btnChart" onclick="App.navigate('chart')">Grafiek</button>
       </div>
       <span class="score-badge" id="scoreBadge" style="display:none">
         Dagtotaal: <span id="dayTotal">0</span> pt
@@ -105,6 +106,10 @@ const App = {
         DayView.render(container, dateStr(this.currentDate));
         document.getElementById('navTitle').textContent = formatDateLong(this.currentDate);
         this.updateDayTotal(dateStr(this.currentDate));
+        break;
+      case 'chart':
+        ChartView.render(container);
+        document.getElementById('navTitle').textContent = ChartView.getTitle();
         break;
     }
   },
