@@ -781,6 +781,78 @@ body {
   font-style: italic;
 }
 
+/* ---- Chart View ---- */
+.chart-view {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.chart-mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--border);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.chart-mode-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.chart-mode-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.chart-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.chart-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.chart-canvas-wrapper {
+  flex: 1;
+  min-height: 300px;
+  position: relative;
+}
+
 /* ---- Mobile Responsive ---- */
 @media (max-width: 768px) {
   .navbar { padding: 8px 12px; gap: 6px; }
