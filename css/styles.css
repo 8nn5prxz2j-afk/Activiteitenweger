@@ -466,6 +466,15 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.week-inner {
+  min-width: 600px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .week-header {
@@ -494,7 +503,7 @@ body {
 
 .week-body {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   position: relative;
 }
@@ -971,9 +980,6 @@ body {
   .month-day-num { font-size: 12px; }
   .month-act-dot { font-size: 8px; }
 
-  .week-view { overflow: auto; -webkit-overflow-scrolling: touch; }
-  .week-header { min-width: 600px; }
-  .week-grid { min-width: 600px; }
   .week-header-cell .day-num { font-size: 16px; }
 
   .legend { gap: 8px; font-size: 10px; }

@@ -82,11 +82,13 @@ const WeekView = {
 
     container.innerHTML = `
       <div class="week-view">
-        <div class="week-header">${headerHtml}</div>
-        <div class="week-body">
-          <div class="week-grid">
-            <div class="week-times">${timesHtml}</div>
-            ${colsHtml}
+        <div class="week-inner">
+          <div class="week-header">${headerHtml}</div>
+          <div class="week-body">
+            <div class="week-grid">
+              <div class="week-times">${timesHtml}</div>
+              ${colsHtml}
+            </div>
           </div>
         </div>
       </div>
