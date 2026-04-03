@@ -494,7 +494,8 @@ body {
 
 .week-body {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   position: relative;
 }
 
@@ -964,10 +965,15 @@ body {
     padding: 4px;
   }
 
+  .month-view { overflow: auto; -webkit-overflow-scrolling: touch; }
+  .month-grid { min-width: 500px; }
   .month-cell { min-height: 60px; padding: 4px; }
   .month-day-num { font-size: 12px; }
   .month-act-dot { font-size: 8px; }
 
+  .week-view { overflow: auto; -webkit-overflow-scrolling: touch; }
+  .week-header { min-width: 600px; }
+  .week-grid { min-width: 600px; }
   .week-header-cell .day-num { font-size: 16px; }
 
   .legend { gap: 8px; font-size: 10px; }
