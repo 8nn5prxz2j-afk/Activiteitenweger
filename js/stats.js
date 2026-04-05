@@ -140,59 +140,44 @@ const Stats = {
     `;
   },
 
-  // Render a full overview stats table (for month view)
+  // Render overview stats (for month view) — 4 key metrics
   renderOverviewTable() {
     const days = this.getAllDaysSorted();
     if (days.length === 0) return '<div class="stats-panel"><p style="color:#999">Nog geen data</p></div>';
 
-    let rows = '';
-    let currentWeekLabel = '';
+    const baseline = 20;
+    const totals = days.map(d => dayTotalPoints(d));
+    const aantalDagen = days.length;
+    const gemDagtotaal = totals.reduce((s, v) => s + v, 0) / aantalDagen;
+    const dagenOver20 = totals.filter(v => v > baseline).length;
+    const afwijkingen = totals.map(v => v - baseline);
+    const gemAfwijking = afwijkingen.reduce((s, v) => s + v, 0) / aantalDagen;
 
-    days.forEach(dayKey => {
-      const date = parseDate(dayKey);
-      const weekNum = getWeekNumber(date);
-      const weekLabel = `Week ${weekNum}`;
-
-      // Week separator
-      if (weekLabel !== currentWeekLabel) {
-        const weekDagtotaal = this.weekAvgDagtotaal(dayKey);
-        const wkDiff = weekDagtotaal !== null ? weekDagtotaal - 20 : null;
-        const wkColor = wkDiff !== null && wkDiff <= 0 ? '#4CAF50' : '#f44336';
-        rows += `<tr class="stats-week-row">
-          <td colspan="5">${weekLabel} — Gem. dagtotaal: <strong>${this.fmt(weekDagtotaal)}</strong>${wkDiff !== null ? ` <span style="color:${wkColor}">(${wkDiff >= 0 ? '+' : ''}${this.fmt(wkDiff)})</span>` : ''}</td>
-        </tr>`;
-        currentWeekLabel = weekLabel;
-      }
-
-      const s = this.getDaySummary(dayKey);
-      const dayName = NL_DAYS_SHORT[nlDayIndex(date)];
-      const dayDiff = s.dagtotaal - 20;
-      const dayColor = dayDiff <= 0 ? '#4CAF50' : '#f44336';
-
-      rows += `<tr class="stats-day-row" onclick="App.goToDay('${dayKey}')">
-        <td class="stats-date">${dayName} ${date.getDate()}/${date.getMonth()+1}</td>
-        <td class="stats-num"><strong>${this.fmt(s.dagtotaal)}</strong></td>
-        <td class="stats-num" style="color:${dayColor}">${dayDiff >= 0 ? '+' : ''}${this.fmt(dayDiff)}</td>
-        <td class="stats-num stats-avg">${this.fmt(s.runAvgTotal)}</td>
-        <td class="stats-num">${s.energySub !== null ? this.fmt(s.energiebalans) : '—'}</td>
-      </tr>`;
-    });
+    const avgColor = gemDagtotaal <= baseline ? '#4CAF50' : '#f44336';
+    const afwColor = gemAfwijking <= 0 ? '#4CAF50' : '#f44336';
+    const afwStr = gemAfwijking >= 0 ? `+${this.fmt(gemAfwijking)}` : this.fmt(gemAfwijking);
 
     return `
-      <div class="stats-panel stats-overview">
-        <div class="stats-title">📊 Overzicht — Alle dagen</div>
-        <table class="stats-table">
-          <thead>
-            <tr>
-              <th>Dag</th>
-              <th>Dagtotaal</th>
-              <th>vs. basis</th>
-              <th>Gem.</th>
-              <th>EB</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <div class="stats-panel">
+        <div class="stats-title">Statistieken</div>
+        <div class="stats-grid">
+          <div class="stat-card stat-highlight">
+            <div class="stat-value" style="color:${avgColor}">${this.fmt(gemDagtotaal)}</div>
+            <div class="stat-label">Gem. dagtotaal</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${aantalDagen}</div>
+            <div class="stat-label">Dagen ingevuld</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:${dagenOver20 > 0 ? '#f44336' : '#4CAF50'}">${dagenOver20}</div>
+            <div class="stat-label">Dagen > 20 pt</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:${afwColor}">${afwStr}</div>
+            <div class="stat-label">Gem. afwijking basis</div>
+          </div>
+        </div>
       </div>
     `;
   },
