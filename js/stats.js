@@ -37,6 +37,27 @@ const Stats = {
     return sum / days.length;
   },
 
+  // Weekly average dagtotaal for the week containing dayKey
+  weekAvgDagtotaal(dayKey) {
+    const date = parseDate(dayKey);
+    const dayOfWeek = (date.getDay() + 6) % 7;
+    const monday = new Date(date);
+    monday.setDate(monday.getDate() - dayOfWeek);
+
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
+      const key = dateStr(d);
+      if (getDayActivities(key).length > 0) {
+        weekDays.push(key);
+      }
+    }
+    if (weekDays.length === 0) return null;
+    const sum = weekDays.reduce((s, d) => s + dayTotalPoints(d), 0);
+    return sum / weekDays.length;
+  },
+
   // Weekly average Energiebalans for the week containing dayKey
   weekAvgEnergiebalans(dayKey) {
     const date = parseDate(dayKey);
@@ -134,22 +155,26 @@ const Stats = {
 
       // Week separator
       if (weekLabel !== currentWeekLabel) {
-        const weekEB = this.weekAvgEnergiebalans(dayKey);
+        const weekDagtotaal = this.weekAvgDagtotaal(dayKey);
+        const wkDiff = weekDagtotaal !== null ? weekDagtotaal - 20 : null;
+        const wkColor = wkDiff !== null && wkDiff <= 0 ? '#4CAF50' : '#f44336';
         rows += `<tr class="stats-week-row">
-          <td colspan="5">${weekLabel} — Gem. Energiebalans: <strong>${this.fmt(weekEB)}</strong></td>
+          <td colspan="5">${weekLabel} — Gem. dagtotaal: <strong>${this.fmt(weekDagtotaal)}</strong>${wkDiff !== null ? ` <span style="color:${wkColor}">(${wkDiff >= 0 ? '+' : ''}${this.fmt(wkDiff)})</span>` : ''}</td>
         </tr>`;
         currentWeekLabel = weekLabel;
       }
 
       const s = this.getDaySummary(dayKey);
       const dayName = NL_DAYS_SHORT[nlDayIndex(date)];
+      const dayDiff = s.dagtotaal - 20;
+      const dayColor = dayDiff <= 0 ? '#4CAF50' : '#f44336';
 
       rows += `<tr class="stats-day-row" onclick="App.goToDay('${dayKey}')">
         <td class="stats-date">${dayName} ${date.getDate()}/${date.getMonth()+1}</td>
-        <td class="stats-num">${this.fmt(s.dagtotaal)}</td>
-        <td class="stats-num">${s.energySub !== null ? this.fmt(s.energySub) : '—'}</td>
-        <td class="stats-num stats-eb">${this.fmt(s.energiebalans)}</td>
-        <td class="stats-num stats-avg">${this.fmt(s.runAvgEB)}</td>
+        <td class="stats-num"><strong>${this.fmt(s.dagtotaal)}</strong></td>
+        <td class="stats-num" style="color:${dayColor}">${dayDiff >= 0 ? '+' : ''}${this.fmt(dayDiff)}</td>
+        <td class="stats-num stats-avg">${this.fmt(s.runAvgTotal)}</td>
+        <td class="stats-num">${s.energySub !== null ? this.fmt(s.energiebalans) : '—'}</td>
       </tr>`;
     });
 
@@ -161,9 +186,9 @@ const Stats = {
             <tr>
               <th>Dag</th>
               <th>Dagtotaal</th>
-              <th>⚡ Streep</th>
-              <th>Energiebalans</th>
-              <th>Gem. EB</th>
+              <th>vs. basis</th>
+              <th>Gem.</th>
+              <th>EB</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
