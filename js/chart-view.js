@@ -6,11 +6,16 @@ const ChartView = {
   chart: null,
   mode: 'day', // 'day' or 'week'
 
+  initialRender: true,
+
   render(container) {
     const days = getSavedDays();
 
-    // Auto-switch to week mode if > 28 days of data
-    if (days.length > 28) this.mode = 'week';
+    // Auto-switch to week mode only on first render
+    if (this.initialRender && days.length > 28) {
+      this.mode = 'week';
+      this.initialRender = false;
+    }
 
     container.innerHTML = `
       <div class="chart-view">
@@ -203,14 +208,18 @@ const ChartView = {
     const days = getSavedDays();
     if (days.length === 0) return { labels: [], values: [], runningAvg: [] };
 
-    // Group days by ISO week
+    // Group days by ISO week, track first date per week
     const weeks = {};
+    const weekFirstDate = {};
     days.forEach(dayKey => {
       const date = parseDate(dayKey);
       const wk = getWeekNumber(date);
       const yr = date.getFullYear();
       const key = `${yr}-W${wk}`;
-      if (!weeks[key]) weeks[key] = [];
+      if (!weeks[key]) {
+        weeks[key] = [];
+        weekFirstDate[key] = date;
+      }
       weeks[key].push(dayTotalPoints(dayKey));
     });
 
@@ -223,7 +232,8 @@ const ChartView = {
     Object.keys(weeks).sort().forEach(weekKey => {
       const pts = weeks[weekKey];
       const avg = pts.reduce((s, v) => s + v, 0) / pts.length;
-      labels.push(`Wk ${weekKey.split('-W')[1]}`);
+      const monday = getMonday(weekFirstDate[weekKey]);
+      labels.push(`${monday.getDate()}/${monday.getMonth() + 1}`);
       values.push(Math.round(avg * 10) / 10);
       totalSum += avg;
       totalCount++;
