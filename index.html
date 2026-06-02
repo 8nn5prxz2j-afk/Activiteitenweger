@@ -56,22 +56,12 @@
         </div>
         <div class="form-group">
           <label>Duur</label>
-          <select id="actDuration" onchange="App.updateModalPreview()">
-            <option value="15">15 min</option>
-            <option value="30" selected>30 min</option>
-            <option value="45">45 min</option>
-            <option value="60">1 uur</option>
-            <option value="75">1u15</option>
-            <option value="90">1u30</option>
-            <option value="105">1u45</option>
-            <option value="120">2 uur</option>
-            <option value="135">2u15</option>
-            <option value="150">2u30</option>
-            <option value="165">2u45</option>
-            <option value="180">3 uur</option>
-            <option value="210">3u30</option>
-            <option value="240">4 uur</option>
-          </select>
+          <div class="duration-stepper">
+            <button type="button" class="dur-btn" onclick="App.stepDuration(-15)" aria-label="15 minuten korter">−</button>
+            <input type="hidden" id="actDuration" value="30">
+            <span class="dur-display" id="actDurationLabel">30 min</span>
+            <button type="button" class="dur-btn" onclick="App.stepDuration(15)" aria-label="15 minuten langer">+</button>
+          </div>
         </div>
       </div>
       <div class="form-group" id="previewPoints" style="font-size:14px;font-weight:500;"></div>

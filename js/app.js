@@ -24,9 +24,14 @@ const App = {
     Sync.updateUI();
     this.navigate('month', startDate);
 
-    // Now-line timer
+    // Now-line timer (en laat de lopende activiteit live meegroeien)
     setInterval(() => {
-      if (this.currentView === 'day') DayView.updateNowLine();
+      if (this.currentView !== 'day') return;
+      DayView.updateNowLine();
+      const r = typeof getRunning === 'function' ? getRunning() : null;
+      if (r && r.dayKey === todayStr() && DayView.dayKey === todayStr()) {
+        DayView.renderActivities();
+      }
     }, 60000);
 
     // Keyboard shortcuts
@@ -67,15 +72,7 @@ const App = {
         <span id="ebBadge" style="margin-left:8px;opacity:0.8">| EB: <span id="ebValue">0</span></span>
       </span>
       <span id="syncStatus"></span>
-      <button class="nav-sync-btn" onclick="App.openSyncModal()">🔄 Sync</button>
-      <div class="nav-group">
-        <button class="nav-export-btn" onclick="ExcelExport.exportAll()">📥 Excel</button>
-        <button class="nav-export-btn" onclick="exportDataAsJSON()">💾 Backup</button>
-        <label class="nav-export-btn nav-import-label">
-          📂 Herstel
-          <input type="file" accept=".json" style="display:none" onchange="importDataFromFile(this)">
-        </label>
-      </div>
+      <button class="nav-btn" onclick="App.openMoreModal()">⋯ Meer</button>
     `;
   },
 
@@ -182,12 +179,29 @@ const App = {
     selectEl.value = opts.name || '';
     startEl.value = opts.startMinutes != null ? formatTime(opts.startMinutes) : '';
     durEl.value = String(opts.durationMinutes || 30);
+    this.updateDurationLabel();
     delBtn.style.display = opts.editing ? 'inline-block' : 'none';
     previewEl.textContent = '';
 
     if (opts.name) this.updateModalPreview();
 
     modal.classList.add('open');
+  },
+
+  // Duur aanpassen in stappen van 15 min (15 min – 8 uur)
+  stepDuration(delta) {
+    const el = document.getElementById('actDuration');
+    let v = (parseInt(el.value) || 30) + delta;
+    v = Math.max(15, Math.min(v, 480));
+    el.value = String(v);
+    this.updateDurationLabel();
+    this.updateModalPreview();
+  },
+
+  updateDurationLabel() {
+    const el = document.getElementById('actDuration');
+    const lbl = document.getElementById('actDurationLabel');
+    if (el && lbl) lbl.textContent = formatDuration(parseInt(el.value) || 30);
   },
 
   closeModal() {
@@ -229,6 +243,32 @@ const App = {
       DayView.deleteFromModal();
     }
     this.closeModal();
+  },
+
+  openMoreModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'moreModal';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>⋯ Meer</h2>
+        <div class="more-actions">
+          <button class="btn btn-secondary" onclick="ExcelExport.exportAll()">📥 Exporteer naar Excel</button>
+          <button class="btn btn-secondary" onclick="exportDataAsJSON()">💾 Backup downloaden (JSON)</button>
+          <label class="btn btn-secondary more-import">
+            📂 Herstel uit backup
+            <input type="file" accept=".json" style="display:none" onchange="importDataFromFile(this)">
+          </label>
+        </div>
+        <h3 class="more-subtitle">🔄 Synchronisatie</h3>
+        ${Sync.renderSyncPanel()}
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="document.getElementById('moreModal').remove()">Sluiten</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
   },
 
   openSyncModal() {

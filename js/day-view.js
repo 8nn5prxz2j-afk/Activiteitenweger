@@ -12,9 +12,16 @@ const DayView = {
 
   render(container, dayKey) {
     this.dayKey = dayKey;
+
+    // Een lopende activiteit van een vorige dag (vergeten te stoppen) afsluiten
+    const r = getRunning();
+    if (r && r.dayKey !== todayStr()) this.commitRunning();
+
     this.activities = getDayActivities(dayKey);
 
     container.innerHTML = `
+      <div class="day-view-wrap">
+      <div class="quicklog-bar" id="quicklogBar"></div>
       <div class="day-layout">
         <div class="sidebar" id="sidebar">
           <div class="sidebar-toolbar">
@@ -28,6 +35,7 @@ const DayView = {
         <div class="timeline-container" id="timelineContainer">
           <div class="timeline" id="timeline"></div>
         </div>
+      </div>
       </div>
     `;
 
@@ -98,8 +106,10 @@ const DayView = {
       div.className = `activity-block cat-${info.weight}`;
       div.style.top = top + 'px';
       div.style.height = Math.max(height, 24) + 'px';
+      div.onmousedown = (e) => DayView.startMove(e, act.id);
       div.onclick = (e) => {
         e.stopPropagation();
+        if (DayView.justDragged) return;
         if (DayView.placingEnergyMarker) {
           const rect = div.getBoundingClientRect();
           const relY = e.clientY - rect.top;
@@ -122,14 +132,212 @@ const DayView = {
       timeline.appendChild(div);
     });
 
+    // Render lopende ("live") activiteit
+    this.renderRunningBlock();
+
     // Render energy marker
     this.renderEnergyMarker();
+
+    // Quick-log balk bijwerken (favorieten + lopende status)
+    this.renderQuickLog();
 
     // Update stats panel
     const statsEl = document.getElementById('dayStatsPanel');
     if (statsEl) statsEl.innerHTML = Stats.renderStatsPanel(this.dayKey);
 
     App.updateDayTotal(this.dayKey);
+  },
+
+  // ---- Quick-log balk: favorieten + live tracker ----
+  renderQuickLog() {
+    const el = document.getElementById('quicklogBar');
+    if (!el) return;
+    const isToday = this.dayKey === todayStr();
+    const r = getRunning();
+    const running = (r && r.dayKey === this.dayKey) ? r : null;
+
+    let html = this.renderEnergyGauge();
+
+    // Lege dag: bied een laagdrempelige start aan
+    if (this.activities.length === 0 && !running) {
+      const prev = getPreviousDayWithData(this.dayKey);
+      html += `
+        <div class="day-starter">
+          <span class="ds-label">Lege dag — snel beginnen?</span>
+          <button class="ds-btn" onclick="DayView.fillStandardDay()">📋 Standaarddag</button>
+          ${prev ? `<button class="ds-btn" onclick="DayView.copyPreviousDay()">📑 Neem ${formatDateShort(parseDate(prev))} over</button>` : ''}
+        </div>`;
+    }
+
+    if (running) {
+      const dur = Math.max(nowRoundedMinutes() - running.startMinutes, 15);
+      html += `
+        <div class="ql-running">
+          <span class="ql-running-dot"></span>
+          <span class="ql-running-text">Bezig: <strong>${running.name}</strong> · sinds ${formatTime(running.startMinutes)} (${formatDuration(dur)})</span>
+          <button class="ql-stop" onclick="DayView.stopLive()">■ Klaar</button>
+        </div>`;
+    }
+
+    html += '<div class="ql-tiles">';
+    getFavorites().forEach(name => {
+      const info = activityMap[name];
+      if (!info) return;
+      const safe = name.replace(/'/g, "\\'");
+      const active = running && running.name === name ? 'ql-active' : '';
+      html += `<button class="ql-tile weight-${info.weight} ${active}" onclick="DayView.quickLog('${safe}')">${name}</button>`;
+    });
+    html += `<button class="ql-tile ql-more" onclick="DayView.openOtherModal()">+ Andere…</button>`;
+    html += '</div>';
+
+    if (isToday && !running) {
+      html += `<div class="ql-hint">Tik op een activiteit om nu te starten — bij je volgende tik stopt de vorige vanzelf.</div>`;
+    } else if (!isToday) {
+      html += `<div class="ql-hint">Tik op een activiteit om een blok van 30 min toe te voegen.</div>`;
+    }
+
+    el.innerHTML = html;
+  },
+
+  renderRunningBlock() {
+    const r = getRunning();
+    if (!r || r.dayKey !== this.dayKey) return;
+    const info = activityMap[r.name];
+    if (!info) return;
+    const timeline = document.getElementById('timeline');
+    if (!timeline) return;
+
+    const nowM = Math.max(nowRoundedMinutes(), r.startMinutes + 15);
+    const dur = nowM - r.startMinutes;
+    const top = ((r.startMinutes - START_HOUR * 60) / 15) * SLOT_HEIGHT;
+    const height = (dur / 15) * SLOT_HEIGHT;
+    const pts = calcPoints(r.name, dur);
+
+    const div = document.createElement('div');
+    div.className = `activity-block cat-${info.weight} live`;
+    div.style.top = top + 'px';
+    div.style.height = Math.max(height, 24) + 'px';
+    div.onclick = (e) => { e.stopPropagation(); DayView.stopLive(); };
+    div.innerHTML = `
+      <span class="act-name">▶ ${r.name}</span>
+      ${height >= 36 ? `<span class="act-meta">bezig sinds ${formatTime(r.startMinutes)} · ${formatDuration(dur)} · ${pts > 0 ? '+' : ''}${pts} pt · tik om te stoppen</span>` : ''}
+    `;
+    timeline.appendChild(div);
+  },
+
+  // Eén-tik loggen vanuit de favorieten
+  quickLog(name) {
+    if (this.dayKey === todayStr()) {
+      this.startLive(name);
+    } else {
+      // Vorige dag: snel een blok van 30 min achteraan toevoegen
+      let start = this.activities.length > 0
+        ? this.activities[this.activities.length - 1].startMinutes + this.activities[this.activities.length - 1].durationMinutes
+        : 9 * 60;
+      if (start < START_HOUR * 60) start = START_HOUR * 60;
+      if (start > END_HOUR * 60 - 30) start = END_HOUR * 60 - 30;
+      this.activities.push({ id: 'act_' + Date.now(), name, startMinutes: start, durationMinutes: 30 });
+      this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
+      this.save();
+      this.renderActivities();
+    }
+  },
+
+  openOtherModal() {
+    this.editingId = null;
+    const start = this.dayKey === todayStr() ? nowRoundedMinutes() : null;
+    App.openModal(start != null ? { startMinutes: start } : {});
+  },
+
+  // Start een lopende activiteit "nu"; sluit een eventuele vorige vanzelf af
+  startLive(name) {
+    this.commitRunning();
+    setRunning({ dayKey: todayStr(), name, startMinutes: nowRoundedMinutes() });
+    this.activities = getDayActivities(this.dayKey);
+    this.renderActivities();
+  },
+
+  // Sluit de lopende activiteit af en zet ze als blok in de dag
+  stopLive() {
+    this.commitRunning();
+    this.activities = getDayActivities(this.dayKey);
+    this.renderActivities();
+  },
+
+  // Zet de lopende activiteit om naar een opgeslagen blok
+  commitRunning() {
+    const r = getRunning();
+    if (!r) return;
+    const endLimit = END_HOUR * 60;
+    let endM = (r.dayKey === todayStr()) ? nowRoundedMinutes() : endLimit;
+    if (endM > endLimit) endM = endLimit;
+    let dur = endM - r.startMinutes;
+    if (dur < 15) dur = 15;
+    if (r.startMinutes + dur > endLimit) dur = endLimit - r.startMinutes;
+    if (dur >= 15) {
+      const acts = getDayActivities(r.dayKey);
+      acts.push({ id: 'act_' + Date.now(), name: r.name, startMinutes: r.startMinutes, durationMinutes: dur });
+      acts.sort((a, b) => a.startMinutes - b.startMinutes);
+      saveDayActivities(r.dayKey, acts);
+    }
+    setRunning(null);
+  },
+
+  // ---- Energie-meter (dagtotaal t.o.v. basis 20) ----
+  renderEnergyGauge() {
+    const baseline = 20;
+    const scaleMax = 40; // basis ligt op 50%
+    const total = dayTotalPoints(this.dayKey);
+    const fillPct = Math.max(0, Math.min(total / scaleMax * 100, 100));
+    let color = 'var(--green)';
+    if (total > baseline) color = 'var(--red)';
+    else if (total > baseline * 0.8) color = 'var(--orange)';
+    const diff = total - baseline;
+    const diffStr = diff > 0 ? `+${this.fmtPts(diff)} boven basis` : `${this.fmtPts(-diff)} onder basis`;
+    const diffColor = diff > 0 ? 'var(--red)' : 'var(--green)';
+
+    return `
+      <div class="energy-gauge">
+        <div class="eg-head">
+          <span class="eg-title">🔋 Dagenergie</span>
+          <span class="eg-val">${this.fmtPts(total)} <span class="eg-base">/ ${baseline} basis</span></span>
+        </div>
+        <div class="eg-bar">
+          <div class="eg-fill" style="width:${fillPct}%;background:${color}"></div>
+          <div class="eg-marker" style="left:${baseline / scaleMax * 100}%" title="Basis ${baseline}"></div>
+        </div>
+        <div class="eg-diff" style="color:${diffColor}">${diffStr}</div>
+      </div>`;
+  },
+
+  fmtPts(n) {
+    return n % 1 === 0 ? String(n) : n.toFixed(1);
+  },
+
+  // ---- Standaarddag invullen ----
+  fillStandardDay() {
+    if (this.activities.length > 0 &&
+        !confirm('Deze dag bevat al activiteiten. Toch de standaardblokken toevoegen?')) return;
+    STANDARD_DAY.forEach((b, i) => {
+      this.activities.push({ id: 'act_' + Date.now() + '_' + i, name: b.name, startMinutes: b.startMinutes, durationMinutes: b.durationMinutes });
+    });
+    this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
+    this.save();
+    this.renderActivities();
+  },
+
+  // ---- Vorige dag overnemen ----
+  copyPreviousDay() {
+    const prev = getPreviousDayWithData(this.dayKey);
+    if (!prev) { alert('Geen eerdere dag met gegevens gevonden.'); return; }
+    if (this.activities.length > 0 &&
+        !confirm('Deze dag bevat al activiteiten. Toch de blokken van de vorige dag toevoegen?')) return;
+    getDayActivities(prev).forEach((a, i) => {
+      this.activities.push({ id: 'act_' + Date.now() + '_' + i, name: a.name, startMinutes: a.startMinutes, durationMinutes: a.durationMinutes });
+    });
+    this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
+    this.save();
+    this.renderActivities();
   },
 
   renderEnergyMarker() {
@@ -301,6 +509,43 @@ const DayView = {
     this.renderActivities();
   },
 
+  // ---- Verplaatsen (slepen op de tijdlijn, desktop) ----
+  startMove(e, id) {
+    if (e.button !== 0) return;              // alleen linkermuisknop
+    if (this.placingEnergyMarker) return;    // niet slepen tijdens energiepeil plaatsen
+    const act = this.activities.find(a => a.id === id);
+    if (!act) return;
+
+    const startY = e.clientY;
+    const origStart = act.startMinutes;
+    let moved = false;
+
+    const onMove = (ev) => {
+      const diff = ev.clientY - startY;
+      if (!moved && Math.abs(diff) < 4) return; // klik-tolerantie
+      moved = true;
+      const slotsDiff = Math.round(diff / SLOT_HEIGHT);
+      let newStart = origStart + slotsDiff * 15;
+      newStart = Math.max(START_HOUR * 60, Math.min(newStart, END_HOUR * 60 - act.durationMinutes));
+      act.startMinutes = newStart;
+      this.renderActivities();
+    };
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (moved) {
+        this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
+        this.save();
+        this.justDragged = true; // onderdruk de klik die hierna komt
+        setTimeout(() => { this.justDragged = false; }, 0);
+      }
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  },
+
   // ---- Resize ----
   startResize(e, id) {
     e.preventDefault();
@@ -323,6 +568,8 @@ const DayView = {
       document.removeEventListener('mouseup', onUp);
       this.resizing = null;
       this.save();
+      this.justDragged = true; // onderdruk de klik na het resizen
+      setTimeout(() => { this.justDragged = false; }, 0);
     };
 
     document.addEventListener('mousemove', onMove);

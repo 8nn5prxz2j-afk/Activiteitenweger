@@ -147,6 +147,68 @@ function getSavedDays() {
   return Object.keys(getAllData()).sort();
 }
 
+// ---- Live tracker & favorites (local-only, niet gesynct) ----
+const RUNNING_KEY = 'activiteitenweger_running';
+
+// Huidige tijd afgerond op 15 min (binnen [START_HOUR, END_HOUR])
+function nowRoundedMinutes() {
+  const d = new Date();
+  let m = Math.round((d.getHours() * 60 + d.getMinutes()) / 15) * 15;
+  if (m < START_HOUR * 60) m = START_HOUR * 60;
+  if (m > END_HOUR * 60 - 15) m = END_HOUR * 60 - 15;
+  return m;
+}
+
+// De lopende activiteit ({ dayKey, name, startMinutes }) of null.
+// Bewust niet gesynct: "nu bezig" is een lokaal, vluchtig begrip per toestel.
+function getRunning() {
+  try { return JSON.parse(localStorage.getItem(RUNNING_KEY) || 'null'); }
+  catch { return null; }
+}
+
+function setRunning(obj) {
+  if (obj === null) localStorage.removeItem(RUNNING_KEY);
+  else localStorage.setItem(RUNNING_KEY, JSON.stringify(obj));
+}
+
+// Standaard-favorieten als er nog weinig data is
+const DEFAULT_FAVORITES = [
+  "Rusten zetel", "Middageten", "Avondeten", "Wandelen met Milo",
+  "Cognitief werk licht", "Tv kijken licht", "Ochtendritueel", "Gamen",
+];
+
+// Standaarddag-sjabloon: een grof skelet dat je daarna aanpast
+const STANDARD_DAY = [
+  { name: "Ochtendritueel",      startMinutes: 570,  durationMinutes: 30 },  // 09:30
+  { name: "Rusten zetel — tv",   startMinutes: 600,  durationMinutes: 60 },  // 10:00
+  { name: "Middageten",          startMinutes: 720,  durationMinutes: 30 },  // 12:00
+  { name: "Rusten zetel",        startMinutes: 750,  durationMinutes: 90 },  // 12:30
+  { name: "Wandelen met Milo",   startMinutes: 840,  durationMinutes: 30 },  // 14:00
+  { name: "Rusten zetel",        startMinutes: 870,  durationMinutes: 120 }, // 14:30
+  { name: "Avondeten",           startMinutes: 1080, durationMinutes: 45 },  // 18:00
+  { name: "Wandelen met Milo",   startMinutes: 1125, durationMinutes: 15 },  // 18:45
+  { name: "Tv kijken licht",     startMinutes: 1140, durationMinutes: 120 }, // 19:00
+];
+
+// Laatste dag vóór dayKey die activiteiten heeft (voor "dag overnemen")
+function getPreviousDayWithData(dayKey) {
+  const days = getSavedDays().filter(d => d < dayKey);
+  return days.length > 0 ? days[days.length - 1] : null;
+}
+
+// Meest-gebruikte activiteiten (op frequentie), aangevuld met standaarden
+function getFavorites(limit = 8) {
+  const counts = {};
+  Object.values(getAllData()).forEach(acts =>
+    acts.forEach(a => { if (activityMap[a.name]) counts[a.name] = (counts[a.name] || 0) + 1; })
+  );
+  const favs = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, limit);
+  DEFAULT_FAVORITES.forEach(n => {
+    if (favs.length < limit && !favs.includes(n) && activityMap[n]) favs.push(n);
+  });
+  return favs.slice(0, limit);
+}
+
 // ---- Energy Marker Storage ----
 const ENERGY_STORAGE_KEY = 'activiteitenweger_energy';
 
