@@ -63,6 +63,12 @@ const categories = [
     { name: "Cognitief werk licht", weight: "Gemiddeld", ptsPerHalf: 2 },
     { name: "Cognitief werk analyse / hyperfocus", weight: "Zwaar", ptsPerHalf: 3 },
   ]},
+  { group: "✳️ Algemeen", items: [
+    { name: "Rust", weight: "Ontspanning", ptsPerHalf: -1 },
+    { name: "Lichte activiteit", weight: "Licht", ptsPerHalf: 1 },
+    { name: "Gemiddelde activiteit", weight: "Gemiddeld", ptsPerHalf: 2 },
+    { name: "Zware activiteit", weight: "Zwaar", ptsPerHalf: 3 },
+  ]},
 ];
 
 // Flat lookup map

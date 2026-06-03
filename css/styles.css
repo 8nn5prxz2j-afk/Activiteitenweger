@@ -1139,6 +1139,25 @@ body {
 .more-import { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .more-subtitle { margin: 18px 0 4px; font-size: 15px; }
 
+/* ---- Activiteiten-kiezer (volledige lijst) ---- */
+.activity-picker {
+  max-height: 60vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 4px -8px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.activity-picker .cat-item {
+  cursor: pointer;
+  padding: 10px 14px 10px 20px;
+  font-size: 14px;
+}
+.activity-picker .cat-item:active { background: #e8e8e8; }
+@media (max-width: 768px) {
+  .activity-picker { max-height: 70vh; }
+}
+
 /* ---- Duur-stepper (modal) ---- */
 .duration-stepper {
   display: flex;

@@ -56,7 +56,7 @@ const DayView = {
         html += `<div class="cat-item weight-${item.weight}" draggable="true"
           data-activity="${item.name}"
           ondragstart="DayView.onDragStart(event, '${safeName}')"
-          onclick="DayView.quickAdd('${safeName}')"
+          onclick="DayView.quickLog('${safeName}')"
         >
           <span>${item.name}</span>
           <span class="weight-badge">${item.ptsPerHalf > 0 ? '+' : ''}${item.ptsPerHalf}/½u</span>
@@ -187,7 +187,7 @@ const DayView = {
       const active = running && running.name === name ? 'ql-active' : '';
       html += `<button class="ql-tile weight-${info.weight} ${active}" onclick="DayView.quickLog('${safe}')">${name}</button>`;
     });
-    html += `<button class="ql-tile ql-more" onclick="DayView.openOtherModal()">+ Andere…</button>`;
+    html += `<button class="ql-tile ql-more" onclick="DayView.openActivityPicker()">+ Andere…</button>`;
     html += '</div>';
 
     if (isToday && !running) {
@@ -225,7 +225,7 @@ const DayView = {
     timeline.appendChild(div);
   },
 
-  // Eén-tik loggen vanuit de favorieten
+  // Eén-tik loggen vanuit favorieten, zijbalk of kiezer
   quickLog(name) {
     if (this.dayKey === todayStr()) {
       this.startLive(name);
@@ -241,12 +241,47 @@ const DayView = {
       this.save();
       this.renderActivities();
     }
+    // Sluit de mobiele zijbalk als die openstaat
+    if (window.innerWidth <= 768 && document.getElementById('sidebar')?.classList.contains('open')) {
+      this.toggleSidebar();
+    }
   },
 
-  openOtherModal() {
-    this.editingId = null;
-    const start = this.dayKey === todayStr() ? nowRoundedMinutes() : null;
-    App.openModal(start != null ? { startMinutes: start } : {});
+  // Kiezer met álle activiteiten (gegroepeerd) — tik = live starten / blok toevoegen
+  openActivityPicker() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'activityPicker';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    let list = '';
+    categories.forEach(cat => {
+      list += `<div class="cat-group"><div class="cat-header">${cat.group}</div>`;
+      cat.items.forEach(item => {
+        const safe = item.name.replace(/'/g, "\\'");
+        list += `<div class="cat-item weight-${item.weight}" onclick="DayView.pickActivity('${safe}')">
+          <span>${item.name}</span>
+          <span class="weight-badge">${item.ptsPerHalf > 0 ? '+' : ''}${item.ptsPerHalf}/½u</span>
+        </div>`;
+      });
+      list += '</div>';
+    });
+
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>Kies een activiteit</h2>
+        <div class="activity-picker">${list}</div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="document.getElementById('activityPicker').remove()">Annuleren</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  },
+
+  pickActivity(name) {
+    document.getElementById('activityPicker')?.remove();
+    this.quickLog(name);
   },
 
   // Start een lopende activiteit "nu"; sluit een eventuele vorige vanzelf af
@@ -454,24 +489,6 @@ const DayView = {
     }
     this.editingId = null;
     App.openModal({ startMinutes: minutes });
-  },
-
-  quickAdd(name) {
-    let startMins;
-    if (this.activities.length > 0) {
-      const last = this.activities[this.activities.length - 1];
-      startMins = last.startMinutes + last.durationMinutes;
-    } else {
-      const now = new Date();
-      startMins = Math.ceil((now.getHours() * 60 + now.getMinutes()) / 15) * 15;
-    }
-    if (startMins < START_HOUR * 60) startMins = START_HOUR * 60;
-
-    this.editingId = null;
-    App.openModal({ name, startMinutes: startMins });
-
-    // Close sidebar on mobile
-    if (window.innerWidth <= 768) this.toggleSidebar();
   },
 
   openEditModal(id) {
