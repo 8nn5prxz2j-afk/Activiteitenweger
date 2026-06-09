@@ -104,7 +104,7 @@ const App = {
       </div>
       <span class="nav-title" id="navTitle"></span>
       <div class="nav-spacer"></div>
-      <div class="nav-group">
+      <div class="nav-group nav-views">
         <button class="nav-btn" id="btnMonth" onclick="App.navigate('month')">Maand</button>
         <button class="nav-btn" id="btnWeek" onclick="App.navigate('week')">Week</button>
         <button class="nav-btn" id="btnDay" onclick="App.navigate('day')">Dag</button>
@@ -117,6 +117,24 @@ const App = {
       <span id="syncStatus"></span>
       <button class="nav-btn" onclick="App.openMoreModal()">⋯ Meer</button>
     `;
+
+    // Bottom tab-bar (alleen zichtbaar op mobiel, via CSS)
+    if (!document.getElementById('tabbar')) {
+      const tab = document.createElement('nav');
+      tab.className = 'tabbar';
+      tab.id = 'tabbar';
+      const tabs = [
+        { view: 'month', ico: '🗓️', label: 'Maand' },
+        { view: 'week', ico: '📅', label: 'Week' },
+        { view: 'day', ico: '☀️', label: 'Dag' },
+        { view: 'chart', ico: '📈', label: 'Grafiek' },
+      ];
+      tab.innerHTML = tabs.map(t => `
+        <button class="tab-item" id="tab-${t.view}" onclick="App.navigate('${t.view}')">
+          <span class="tab-ico">${t.ico}</span>${t.label}
+        </button>`).join('');
+      document.body.appendChild(tab);
+    }
   },
 
   navigate(view, date) {
@@ -130,9 +148,14 @@ const App = {
     void container.offsetWidth; // reflow zodat de animatie opnieuw afspeelt
     container.classList.add('view-enter');
 
-    // Update active button
+    // Update active button (top-navigatie + tab-bar)
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('btn' + view.charAt(0).toUpperCase() + view.slice(1))?.classList.add('active');
+    document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + view)?.classList.add('active');
+
+    // Voetbalk-legende verbergen in de grafiek (groen/rood betekent daar iets anders)
+    document.body.classList.toggle('view-chart', view === 'chart');
 
     // Show/hide score badge
     document.getElementById('scoreBadge').style.display = view === 'day' ? '' : 'none';

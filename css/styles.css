@@ -1019,7 +1019,6 @@ body {
   }
 
   .month-view { overflow: auto; -webkit-overflow-scrolling: touch; }
-  .month-grid { min-width: 500px; }
   .month-cell { min-height: 60px; padding: 4px; }
   .month-day-num { font-size: 12px; }
   .month-act-dot { font-size: 8px; }
@@ -1301,6 +1300,82 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .app-body.view-enter > * { animation: none; }
+}
+
+/* ---- Bottom tab-bar (mobiel) ---- */
+.tabbar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 60;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab-item {
+  background: none;
+  border: none;
+  padding: 6px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.tab-item .tab-ico { font-size: 20px; line-height: 1; }
+.tab-item.active { color: var(--primary); font-weight: 700; }
+
+/* Voetbalk-legende niet tonen in de grafiek (kleuren betekenen daar iets anders) */
+body.view-chart .legend { display: none; }
+
+@media (max-width: 768px) {
+  /* Tab-bar onderaan; view-knoppen en titel uit de top-balk */
+  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .nav-views { display: none; }
+  .navbar h1 { display: none; }
+
+  /* Ruimte vrijhouden voor de tab-bar */
+  .app-body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+  .legend { bottom: calc(58px + env(safe-area-inset-bottom)); }
+
+  /* Favorieten: één horizontaal scrollbare rij */
+  .ql-tiles {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .ql-tiles::-webkit-scrollbar { display: none; }
+  .ql-tile { flex-shrink: 0; }
+
+  /* Maandgrid past op het scherm: stippen i.p.v. activiteitsnamen */
+  .month-grid { min-width: 0; }
+  .month-activities { display: flex; flex-direction: row; gap: 3px; margin-top: 3px; }
+  .month-act-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    padding: 0;
+    font-size: 0;
+    color: transparent;
+    flex-shrink: 0;
+  }
+  .month-act-dot.weight-chip-Ontspanning { background: var(--green); }
+  .month-act-dot.weight-chip-Licht { background: var(--yellow); }
+  .month-act-dot.weight-chip-Gemiddeld { background: var(--orange); }
+  .month-act-dot.weight-chip-Zwaar { background: var(--red); }
+  .month-act-more { display: none; }
+
+  /* Touch: verwijderknop altijd zichtbaar en groot genoeg */
+  .act-delete { display: block; padding: 8px 10px; font-size: 16px; top: 0; right: 0; }
+
+  /* Grafiek: minder padding op klein scherm */
+  .chart-view { padding: 10px; }
 }
 
 /* ---- PWA standalone ---- */

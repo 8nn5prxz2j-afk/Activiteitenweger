@@ -190,10 +190,14 @@ const DayView = {
     html += `<button class="ql-tile ql-more" onclick="DayView.openActivityPicker()">+ Andere…</button>`;
     html += '</div>';
 
-    if (isToday && !running) {
-      html += `<div class="ql-hint">Tik op een activiteit om nu te starten — bij je volgende tik stopt de vorige vanzelf.</div>`;
-    } else if (!isToday) {
-      html += `<div class="ql-hint">Tik op een activiteit om een blok van 30 min toe te voegen.</div>`;
+    // Uitleg-hint alleen tonen zolang de gebruiker nog weinig gelogd heeft
+    const hintCount = parseInt(localStorage.getItem('activiteitenweger_hint') || '0');
+    if (hintCount < 5) {
+      if (isToday && !running) {
+        html += `<div class="ql-hint">Tik op een activiteit om nu te starten — bij je volgende tik stopt de vorige vanzelf.</div>`;
+      } else if (!isToday) {
+        html += `<div class="ql-hint">Tik op een activiteit om een blok van 30 min toe te voegen.</div>`;
+      }
     }
 
     el.innerHTML = html;
@@ -227,6 +231,8 @@ const DayView = {
 
   // Eén-tik loggen vanuit favorieten, zijbalk of kiezer
   quickLog(name) {
+    const hintCount = parseInt(localStorage.getItem('activiteitenweger_hint') || '0');
+    if (hintCount < 5) localStorage.setItem('activiteitenweger_hint', String(hintCount + 1));
     if (this.dayKey === todayStr()) {
       this.startLive(name);
     } else {

@@ -97,6 +97,9 @@ const ChartView = {
     const tickColor = dark ? '#aaa' : '#666';
     const avgLineColor = dark ? '#9FA8DA' : '#1a237e';
 
+    // Compacte weergave op smalle schermen
+    const compact = window.innerWidth <= 768;
+
     // Staafkleur per dag/week t.o.v. de basis van díe periode (historiek)
     const barColors = data.values.map((v, i) => v <= data.baselines[i] ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)');
     const barBorders = data.values.map((v, i) => v <= data.baselines[i] ? '#4CAF50' : '#f44336');
@@ -160,7 +163,7 @@ const ChartView = {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { usePointStyle: true, padding: 16, color: tickColor },
+            labels: { usePointStyle: true, padding: compact ? 8 : 16, color: tickColor, boxWidth: compact ? 6 : undefined, font: compact ? { size: 10 } : undefined },
           },
           annotation: {
             annotations: allSameBaseline ? {
@@ -187,7 +190,7 @@ const ChartView = {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { maxRotation: 45, font: { size: 11 }, color: tickColor },
+            ticks: { maxRotation: 45, font: { size: compact ? 9 : 11 }, color: tickColor, maxTicksLimit: compact ? 8 : undefined },
           },
           y: {
             beginAtZero: true,
