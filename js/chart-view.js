@@ -4,18 +4,14 @@
 
 const ChartView = {
   chart: null,
-  mode: 'day', // 'day' or 'week'
-
-  initialRender: true,
+  mode: 'day', // 'day' of 'week' (effectief, na auto-keuze)
+  userMode: null, // expliciete keuze van de gebruiker; null = automatisch
 
   render(container) {
     const days = getSavedDays();
 
-    // Auto-switch to week mode only on first render
-    if (this.initialRender && days.length > 28) {
-      this.mode = 'week';
-      this.initialRender = false;
-    }
+    // Automatisch weekmodus bij veel data, tenzij de gebruiker zelf koos
+    this.mode = this.userMode || (days.length > 28 ? 'week' : 'day');
 
     container.innerHTML = `
       <div class="chart-view">
@@ -37,7 +33,7 @@ const ChartView = {
   },
 
   setMode(mode) {
-    this.mode = mode;
+    this.userMode = mode;
     const container = document.getElementById('appBody');
     this.render(container);
   },

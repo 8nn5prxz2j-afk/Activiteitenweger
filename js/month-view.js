@@ -45,7 +45,7 @@ const MonthView = {
         actsHtml += `<div class="month-act-dot" style="background:${col.bg};color:${col.text}">${a.name}</div>`;
       });
       if (acts.length > 3) {
-        actsHtml += `<div class="month-act-dot" style="color:#999">+${acts.length - 3} meer</div>`;
+        actsHtml += `<div class="month-act-dot month-act-more">+${acts.length - 3} meer</div>`;
       }
 
       // Total badge

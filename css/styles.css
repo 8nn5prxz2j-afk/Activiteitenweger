@@ -603,7 +603,7 @@ body {
 }
 .month-cell:hover { background: #f8f8f8; }
 .month-cell.other-month { background: #fafafa; }
-.month-cell.other-month .month-day-num { color: #ccc; }
+.month-cell.other-month .month-day-num { color: #999; }
 .month-cell.today { background: #E8EAF6; }
 
 .month-day-num {
@@ -635,6 +635,13 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.month-act-more { color: var(--text-secondary); }
+
+/* Sync-foutindicator */
+.sync-active.sync-error {
+  background: rgba(244,67,54,0.35);
+  color: #FFCDD2;
 }
 
 /* ---- Modal ---- */
@@ -966,7 +973,7 @@ body {
   .sidebar-overlay.open { display: block; }
 
   .hamburger {
-    display: flex !important;
+    display: flex;
     background: none;
     border: none;
     color: white;

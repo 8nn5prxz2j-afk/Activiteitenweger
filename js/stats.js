@@ -37,13 +37,9 @@ const Stats = {
     return sum / days.length;
   },
 
-  // Weekly average dagtotaal for the week containing dayKey
-  weekAvgDagtotaal(dayKey) {
-    const date = parseDate(dayKey);
-    const dayOfWeek = (date.getDay() + 6) % 7;
-    const monday = new Date(date);
-    monday.setDate(monday.getDate() - dayOfWeek);
-
+  // Weekgemiddelde over ingevulde dagen in de week van dayKey
+  weekAvg(dayKey, valueFn) {
+    const monday = getMonday(parseDate(dayKey));
     const weekDays = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
@@ -54,29 +50,16 @@ const Stats = {
       }
     }
     if (weekDays.length === 0) return null;
-    const sum = weekDays.reduce((s, d) => s + dayTotalPoints(d), 0);
+    const sum = weekDays.reduce((s, d) => s + valueFn(d), 0);
     return sum / weekDays.length;
   },
 
-  // Weekly average Energiebalans for the week containing dayKey
-  weekAvgEnergiebalans(dayKey) {
-    const date = parseDate(dayKey);
-    const dayOfWeek = (date.getDay() + 6) % 7; // Monday = 0
-    const monday = new Date(date);
-    monday.setDate(monday.getDate() - dayOfWeek);
+  weekAvgDagtotaal(dayKey) {
+    return this.weekAvg(dayKey, dayTotalPoints);
+  },
 
-    const weekDays = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(d.getDate() + i);
-      const key = dateStr(d);
-      if (getDayActivities(key).length > 0) {
-        weekDays.push(key);
-      }
-    }
-    if (weekDays.length === 0) return null;
-    const sum = weekDays.reduce((s, d) => s + this.getEnergiebalans(d), 0);
-    return sum / weekDays.length;
+  weekAvgEnergiebalans(dayKey) {
+    return this.weekAvg(dayKey, (d) => this.getEnergiebalans(d));
   },
 
   // Get stats summary for a specific day
@@ -182,12 +165,3 @@ const Stats = {
     `;
   },
 };
-
-// Helper: get ISO week number
-function getWeekNumber(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}

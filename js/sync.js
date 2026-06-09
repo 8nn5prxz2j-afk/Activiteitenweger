@@ -9,6 +9,7 @@ const Sync = {
   enabled: false,
   lastWrite: 0,
   debounceTimer: null,
+  errored: false,
 
   SYNC_CODE_KEY: 'activiteitenweger_sync_code',
 
@@ -103,7 +104,19 @@ const Sync = {
       lastModified: Date.now(),
     };
     this.lastWrite = Date.now();
-    ref.set(data);
+    ref.set(data)
+      .then(() => this.setError(false))
+      .catch(err => {
+        console.error('Sync push mislukt:', err);
+        this.setError(true);
+      });
+  },
+
+  // Toon/verberg de fout-indicator in de navbalk
+  setError(state) {
+    if (this.errored === state) return;
+    this.errored = state;
+    this.updateUI();
   },
 
   // Push only changed data (debounced)
@@ -118,6 +131,7 @@ const Sync = {
     if (!this.db || !this.syncCode) return;
     const ref = this.db.ref(`rooms/${this.syncCode}`);
     ref.once('value', (snapshot) => {
+      this.setError(false);
       const remote = snapshot.val();
       if (!remote) {
         // No remote data — push local data up
@@ -126,6 +140,10 @@ const Sync = {
         return;
       }
       this.mergeRemoteData(remote);
+      if (callback) callback();
+    }, (err) => {
+      console.error('Sync pull mislukt:', err);
+      this.setError(true);
       if (callback) callback();
     });
   },
@@ -180,6 +198,9 @@ const Sync = {
       if (typeof App !== 'undefined' && App.currentView) {
         App.navigate(App.currentView);
       }
+    }, (err) => {
+      console.error('Sync listener-fout:', err);
+      this.setError(true);
     });
 
     this.listeners.push({ ref, listener });
@@ -199,11 +220,19 @@ const Sync = {
     if (!el) return;
 
     if (this.enabled && this.syncCode) {
-      el.innerHTML = `
-        <span class="sync-active" title="Sync actief: ${this.syncCode}">
-          🔄 ${this.syncCode}
-        </span>
-      `;
+      if (this.errored) {
+        el.innerHTML = `
+          <span class="sync-active sync-error" title="Sync-fout — controleer je verbinding. Data blijft lokaal bewaard.">
+            ⚠️ ${this.syncCode}
+          </span>
+        `;
+      } else {
+        el.innerHTML = `
+          <span class="sync-active" title="Sync actief: ${this.syncCode}">
+            🔄 ${this.syncCode}
+          </span>
+        `;
+      }
     } else {
       el.innerHTML = '';
     }

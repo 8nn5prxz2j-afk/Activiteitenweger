@@ -126,13 +126,38 @@ function dayTotalPoints(dayKey) {
 
 // ---- Storage ----
 
+// In-memory cache: voorkomt herhaald JSON.parse in stats-lussen.
+// Geldig zolang alle schrijfacties via saveAllData lopen; bij wijzigingen
+// vanuit een andere tab wordt hij via het storage-event geïnvalideerd.
+let _dataCache = null;
+
+function invalidateDataCache() {
+  _dataCache = null;
+}
+
 function getAllData() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  if (_dataCache === null) {
+    _dataCache = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  }
+  return _dataCache;
 }
 
 function saveAllData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  _dataCache = data;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    notifyStorageError(e);
+  }
   if (typeof Sync !== 'undefined') Sync.pushDebounced();
+}
+
+function notifyStorageError(e) {
+  const msg = e && e.name === 'QuotaExceededError'
+    ? 'Opslag vol — maak een backup (⋯ Meer) en wis oude data.'
+    : 'Opslaan mislukt — maak voor de zekerheid een backup (⋯ Meer).';
+  if (typeof Toast !== 'undefined') Toast.show('⚠️ ' + msg);
+  else alert(msg);
 }
 
 function getDayActivities(dayKey) {
@@ -230,7 +255,11 @@ function setEnergyMarker(dayKey, minutes) {
   } else {
     data[dayKey] = minutes;
   }
-  localStorage.setItem(ENERGY_STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(ENERGY_STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    notifyStorageError(e);
+  }
   if (typeof Sync !== 'undefined') Sync.pushDebounced();
 }
 
@@ -269,6 +298,7 @@ function getWeekNumber(date) {
 }
 
 const NL_MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const NL_MONTHS_SHORT = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 const NL_DAYS_SHORT = ['ma','di','wo','do','vr','za','zo'];
 const NL_DAYS_LONG = ['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];
 
@@ -282,7 +312,7 @@ function formatDateLong(date) {
 }
 
 function formatDateShort(date) {
-  return `${date.getDate()} ${NL_MONTHS[date.getMonth()].substring(0, 3)}`;
+  return `${date.getDate()} ${NL_MONTHS_SHORT[date.getMonth()]}`;
 }
 
 // ---- Data Import / Export (for sync between devices) ----
