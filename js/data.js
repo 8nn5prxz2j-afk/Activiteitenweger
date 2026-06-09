@@ -423,12 +423,13 @@ function importDataFromFile(input) {
       // Merge baseline-historiek
       mergeBaselineHistory(data.baseline);
 
-      alert(`Import geslaagd! ${imported} nieuwe dagen toegevoegd.`);
+      document.getElementById('moreModal')?.remove();
+      Toast.show(`📂 Import geslaagd — ${imported} nieuwe dagen toegevoegd`);
 
       // Refresh the current view
       App.navigate(App.currentView);
     } catch (err) {
-      alert('Fout bij importeren: ongeldig bestand.');
+      Toast.show('⚠️ Fout bij importeren: ongeldig bestand');
     }
   };
   reader.readAsText(file);

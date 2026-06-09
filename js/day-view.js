@@ -402,9 +402,7 @@ const DayView = {
   toggleEnergyMode() {
     const existing = getEnergyMarker(this.dayKey);
     if (existing !== null) {
-      if (confirm('Wil je de energiepeil-markering verwijderen?')) {
-        this.removeEnergyMarker();
-      }
+      this.removeEnergyMarker();
       return;
     }
     this.placingEnergyMarker = !this.placingEnergyMarker;
@@ -421,8 +419,16 @@ const DayView = {
   },
 
   removeEnergyMarker() {
-    setEnergyMarker(this.dayKey, null);
+    const dayKey = this.dayKey;
+    const prev = getEnergyMarker(dayKey);
+    setEnergyMarker(dayKey, null);
     this.renderActivities();
+    if (prev !== null) {
+      Toast.show('⚡ Energiepeil verwijderd', { undo: () => {
+        setEnergyMarker(dayKey, prev);
+        if (this.dayKey === dayKey) this.renderActivities();
+      }});
+    }
   },
 
   updateNowLine() {
@@ -513,17 +519,40 @@ const DayView = {
 
   deleteFromModal() {
     if (this.editingId) {
+      const act = this.activities.find(a => a.id === this.editingId);
       this.activities = this.activities.filter(a => a.id !== this.editingId);
       this.editingId = null;
       this.save();
       this.renderActivities();
+      if (act) {
+        const dayKey = this.dayKey;
+        Toast.show(`"${act.name}" verwijderd`, { undo: () => this.restoreActivities(dayKey, [act]) });
+      }
     }
   },
 
   deleteActivityById(id) {
+    const act = this.activities.find(a => a.id === id);
     this.activities = this.activities.filter(a => a.id !== id);
     this.save();
     this.renderActivities();
+    if (act) {
+      const dayKey = this.dayKey;
+      Toast.show(`"${act.name}" verwijderd`, { undo: () => this.restoreActivities(dayKey, [act]) });
+    }
+  },
+
+  // Zet eerder verwijderde blokken terug (ook als de gebruiker intussen
+  // naar een andere dag is genavigeerd)
+  restoreActivities(dayKey, acts) {
+    const list = getDayActivities(dayKey);
+    list.push(...acts);
+    list.sort((a, b) => a.startMinutes - b.startMinutes);
+    saveDayActivities(dayKey, list);
+    if (this.dayKey === dayKey) {
+      this.activities = list;
+      this.renderActivities();
+    }
   },
 
   // ---- Verplaatsen (slepen op de tijdlijn, desktop) ----
@@ -594,10 +623,13 @@ const DayView = {
   },
 
   clearDay() {
-    if (!confirm('Wil je alle activiteiten van deze dag wissen?')) return;
+    if (this.activities.length === 0) return;
+    const dayKey = this.dayKey;
+    const backup = this.activities.slice();
     this.activities = [];
     this.save();
     this.renderActivities();
+    Toast.show('Dag gewist', { undo: () => this.restoreActivities(dayKey, backup) });
   },
 
   save() {

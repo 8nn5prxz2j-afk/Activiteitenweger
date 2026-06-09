@@ -41,8 +41,7 @@ const MonthView = {
       shown.forEach(a => {
         const info = activityMap[a.name];
         if (!info) return;
-        const col = weightColors[info.weight];
-        actsHtml += `<div class="month-act-dot" style="background:${col.bg};color:${col.text}">${a.name}</div>`;
+        actsHtml += `<div class="month-act-dot weight-chip-${info.weight}">${a.name}</div>`;
       });
       if (acts.length > 3) {
         actsHtml += `<div class="month-act-dot month-act-more">+${acts.length - 3} meer</div>`;
@@ -52,12 +51,12 @@ const MonthView = {
       let badgeHtml = '';
       if (pts !== 0) {
         const base = getBaseline(key);
-        let badgeBg, badgeColor;
-        if (pts < 0) { badgeBg = '#E8F5E9'; badgeColor = '#2E7D32'; }
-        else if (pts <= base / 2) { badgeBg = '#FFF9C4'; badgeColor = '#F57F17'; }
-        else if (pts <= base) { badgeBg = '#FFE0B2'; badgeColor = '#E65100'; }
-        else { badgeBg = '#FFCDD2'; badgeColor = '#C62828'; }
-        badgeHtml = `<span class="month-total-badge" style="background:${badgeBg};color:${badgeColor}">${pts > 0 ? '+' : ''}${pts % 1 === 0 ? pts : pts.toFixed(1)}</span>`;
+        let badgeClass;
+        if (pts < 0) badgeClass = 'badge-neg';
+        else if (pts <= base / 2) badgeClass = 'badge-low';
+        else if (pts <= base) badgeClass = 'badge-mid';
+        else badgeClass = 'badge-high';
+        badgeHtml = `<span class="month-total-badge ${badgeClass}">${pts > 0 ? '+' : ''}${pts % 1 === 0 ? pts : pts.toFixed(1)}</span>`;
       }
 
       cellsHtml += `<div class="month-cell ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}"

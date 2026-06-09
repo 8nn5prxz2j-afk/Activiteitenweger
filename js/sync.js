@@ -61,16 +61,43 @@ const Sync = {
     this.pushAll();
     this.startListening();
     this.updateUI();
+    this.refreshMoreModal();
 
-    alert(`Sync geactiveerd!\n\nJe sync-code is: ${code}\n\nVoer deze code in op je andere apparaat om te synchroniseren.`);
+    Toast.show(`🔄 Sync actief — code: ${code}`, { duration: 7000 });
   },
 
-  // Join an existing sync room
+  // Join an existing sync room — klein modal i.p.v. native prompt
   joinSync() {
-    const code = prompt('Voer de sync-code in van je andere apparaat:');
-    if (!code || code.trim().length === 0) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'joinSyncModal';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>🔄 Code invoeren</h2>
+        <div class="form-group">
+          <label>Sync-code van je andere apparaat</label>
+          <input type="text" id="joinCodeInput" maxlength="6" autocomplete="off"
+            autocapitalize="characters" spellcheck="false" placeholder="bv. AB2CDE"
+            style="text-transform:uppercase"
+            onkeydown="if(event.key==='Enter')Sync.confirmJoin()">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="document.getElementById('joinSyncModal').remove()">Annuleren</button>
+          <button class="btn btn-primary" onclick="Sync.confirmJoin()">Verbinden</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => document.getElementById('joinCodeInput')?.focus(), 50);
+  },
 
-    this.syncCode = code.trim().toUpperCase();
+  confirmJoin() {
+    const code = (document.getElementById('joinCodeInput')?.value || '').trim().toUpperCase();
+    if (!code) return;
+    document.getElementById('joinSyncModal')?.remove();
+
+    this.syncCode = code;
     localStorage.setItem(this.SYNC_CODE_KEY, this.syncCode);
     this.enabled = true;
 
@@ -78,20 +105,37 @@ const Sync = {
     this.pullAll(() => {
       this.startListening();
       this.updateUI();
-      // Refresh current view
+      this.refreshMoreModal();
       App.navigate(App.currentView);
-      alert('Sync verbonden! Data wordt nu automatisch gesynchroniseerd.');
+      Toast.show('🔄 Sync verbonden — data wordt automatisch gesynchroniseerd');
     });
   },
 
-  // Stop syncing
+  // Stop syncing — met ongedaan-maken i.p.v. confirm
   stopSync() {
-    if (!confirm('Wil je de synchronisatie stoppen? Lokale data blijft bewaard.')) return;
+    const code = this.syncCode;
     this.stopListening();
     this.syncCode = null;
     localStorage.removeItem(this.SYNC_CODE_KEY);
     this.enabled = false;
     this.updateUI();
+    this.refreshMoreModal();
+    Toast.show('Sync gestopt — lokale data blijft bewaard', { undo: () => {
+      this.syncCode = code;
+      localStorage.setItem(this.SYNC_CODE_KEY, code);
+      this.enabled = true;
+      this.startListening();
+      this.updateUI();
+      this.refreshMoreModal();
+    }});
+  },
+
+  // Ververs het ⋯ Meer-menu als dat openstaat (sync-paneel toont status)
+  refreshMoreModal() {
+    if (document.getElementById('moreModal')) {
+      document.getElementById('moreModal').remove();
+      App.openMoreModal();
+    }
   },
 
   // Push all local data to Firebase
@@ -254,7 +298,7 @@ const Sync = {
           <div class="sync-code-display">${this.syncCode}</div>
           <p class="sync-hint">Voer deze code in op je andere apparaat</p>
           <div class="sync-actions">
-            <button class="btn btn-secondary" onclick="Sync.pushAll();alert('Data verstuurd!')">🔄 Nu synchroniseren</button>
+            <button class="btn btn-secondary" onclick="Sync.pushAll();Toast.show('🔄 Data verstuurd')">🔄 Nu synchroniseren</button>
             <button class="btn btn-danger" onclick="Sync.stopSync()">Sync stoppen</button>
           </div>
         </div>

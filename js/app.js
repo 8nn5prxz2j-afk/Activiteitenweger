@@ -1,4 +1,40 @@
 // ============================================
+// Toast — korte melding met optionele "Ongedaan maken"
+// ============================================
+
+const Toast = {
+  timer: null,
+
+  show(msg, opts = {}) {
+    let el = document.getElementById('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      document.body.appendChild(el);
+    }
+    clearTimeout(this.timer);
+    el.innerHTML = '';
+    const span = document.createElement('span');
+    span.className = 'toast-msg';
+    span.textContent = msg;
+    el.appendChild(span);
+    if (opts.undo) {
+      const btn = document.createElement('button');
+      btn.className = 'toast-undo';
+      btn.textContent = 'Ongedaan maken';
+      btn.onclick = () => { this.hide(); opts.undo(); };
+      el.appendChild(btn);
+    }
+    el.classList.add('show');
+    this.timer = setTimeout(() => this.hide(), opts.duration || 4500);
+  },
+
+  hide() {
+    document.getElementById('toast')?.classList.remove('show');
+  },
+};
+
+// ============================================
 // App — Routing, Navigation & Init
 // ============================================
 
@@ -7,6 +43,13 @@ const App = {
   currentDate: new Date(),
 
   init() {
+    // Theme-color meekleuren met licht/donker
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => themeMeta?.setAttribute('content', darkQuery.matches ? '#0f1233' : '#1a237e');
+    applyTheme();
+    darkQuery.addEventListener?.('change', applyTheme);
+
     this.renderNav();
     // Start at the most recent day with data, or today
     const days = getSavedDays();
@@ -81,6 +124,11 @@ const App = {
     this.currentView = view;
 
     const container = document.getElementById('appBody');
+
+    // Subtiele binnenkom-animatie bij het wisselen van view
+    container.classList.remove('view-enter');
+    void container.offsetWidth; // reflow zodat de animatie opnieuw afspeelt
+    container.classList.add('view-enter');
 
     // Update active button
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -216,8 +264,8 @@ const App = {
       const pts = calcPoints(name, dur);
       const info = activityMap[name];
       el.textContent = `${info.weight} · ${pts > 0 ? '+' : ''}${pts} punten`;
-      const colors = weightColors[info.weight];
-      el.style.color = colors.text;
+      const weightVar = { Ontspanning: '--green-text', Licht: '--yellow-text', Gemiddeld: '--orange-text', Zwaar: '--red-text' };
+      el.style.color = `var(${weightVar[info.weight]})`;
     } else {
       el.textContent = '';
     }

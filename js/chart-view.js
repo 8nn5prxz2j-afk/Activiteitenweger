@@ -91,6 +91,12 @@ const ChartView = {
 
     const ctx = canvas.getContext('2d');
 
+    // Dark mode: grid/tekst/lijnen aanpassen aan het kleurenschema
+    const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridColor = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const tickColor = dark ? '#aaa' : '#666';
+    const avgLineColor = dark ? '#9FA8DA' : '#1a237e';
+
     // Staafkleur per dag/week t.o.v. de basis van díe periode (historiek)
     const barColors = data.values.map((v, i) => v <= data.baselines[i] ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)');
     const barBorders = data.values.map((v, i) => v <= data.baselines[i] ? '#4CAF50' : '#f44336');
@@ -109,11 +115,11 @@ const ChartView = {
         label: 'Lopend gemiddelde',
         data: data.runningAvg,
         type: 'line',
-        borderColor: '#1a237e',
+        borderColor: avgLineColor,
         backgroundColor: 'rgba(26, 35, 126, 0.1)',
         borderWidth: 2,
         pointRadius: 3,
-        pointBackgroundColor: '#1a237e',
+        pointBackgroundColor: avgLineColor,
         tension: 0.3,
         fill: false,
         order: 1,
@@ -154,7 +160,7 @@ const ChartView = {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { usePointStyle: true, padding: 16 },
+            labels: { usePointStyle: true, padding: 16, color: tickColor },
           },
           annotation: {
             annotations: allSameBaseline ? {
@@ -181,16 +187,17 @@ const ChartView = {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { maxRotation: 45, font: { size: 11 } },
+            ticks: { maxRotation: 45, font: { size: 11 }, color: tickColor },
           },
           y: {
             beginAtZero: true,
-            grid: { color: 'rgba(0,0,0,0.06)' },
-            ticks: { font: { size: 11 } },
+            grid: { color: gridColor },
+            ticks: { font: { size: 11 }, color: tickColor },
             title: {
               display: true,
               text: 'Punten',
               font: { size: 12, weight: 'bold' },
+              color: tickColor,
             },
           },
         },
