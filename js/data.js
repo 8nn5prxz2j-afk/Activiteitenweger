@@ -240,6 +240,64 @@ function getFavorites(limit = 8) {
   return favs.slice(0, limit);
 }
 
+// ---- Basislijn (instelbaar, met historiek) ----
+// Historiek van wijzigingen: [{from:'2026-06-10', value:18}, …].
+// Een wijziging geldt vanaf die datum; eerdere dagen behouden hun oude basis.
+const BASELINE_KEY = 'activiteitenweger_baseline';
+const DEFAULT_BASELINE = 20;
+
+function getBaselineHistory() {
+  try {
+    const h = JSON.parse(localStorage.getItem(BASELINE_KEY) || '[]');
+    return Array.isArray(h) ? h.slice().sort((a, b) => (a.from < b.from ? -1 : 1)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function getBaseline(dayKey) {
+  let value = DEFAULT_BASELINE;
+  for (const entry of getBaselineHistory()) {
+    if (entry.from <= dayKey) value = entry.value;
+    else break;
+  }
+  return value;
+}
+
+function setBaselineFrom(value) {
+  const today = todayStr();
+  const hist = getBaselineHistory().filter(e => e.from !== today);
+  hist.push({ from: today, value });
+  hist.sort((a, b) => (a.from < b.from ? -1 : 1));
+  try {
+    localStorage.setItem(BASELINE_KEY, JSON.stringify(hist));
+  } catch (e) {
+    notifyStorageError(e);
+  }
+  if (typeof Sync !== 'undefined') Sync.pushDebounced();
+}
+
+// Merge een remote historiek in de lokale (entries op 'from'-datum, lokaal wint)
+function mergeBaselineHistory(remoteArr) {
+  if (!Array.isArray(remoteArr) || remoteArr.length === 0) return;
+  const byFrom = {};
+  getBaselineHistory().forEach(e => { byFrom[e.from] = e.value; });
+  let changed = false;
+  remoteArr.forEach(e => {
+    if (e && e.from && typeof e.value === 'number' && byFrom[e.from] === undefined) {
+      byFrom[e.from] = e.value;
+      changed = true;
+    }
+  });
+  if (!changed) return;
+  const merged = Object.keys(byFrom).sort().map(from => ({ from, value: byFrom[from] }));
+  try {
+    localStorage.setItem(BASELINE_KEY, JSON.stringify(merged));
+  } catch (e) {
+    notifyStorageError(e);
+  }
+}
+
 // ---- Energy Marker Storage ----
 const ENERGY_STORAGE_KEY = 'activiteitenweger_energy';
 
@@ -321,6 +379,7 @@ function exportDataAsJSON() {
   const data = {
     activities: getAllData(),
     energy: JSON.parse(localStorage.getItem(ENERGY_STORAGE_KEY) || '{}'),
+    baseline: getBaselineHistory(),
     exportDate: new Date().toISOString(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -360,6 +419,9 @@ function importDataFromFile(input) {
           setEnergyMarker(key, mins);
         }
       }
+
+      // Merge baseline-historiek
+      mergeBaselineHistory(data.baseline);
 
       alert(`Import geslaagd! ${imported} nieuwe dagen toegevoegd.`);
 

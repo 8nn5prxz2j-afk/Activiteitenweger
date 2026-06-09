@@ -318,10 +318,10 @@ const DayView = {
     setRunning(null);
   },
 
-  // ---- Energie-meter (dagtotaal t.o.v. basis 20) ----
+  // ---- Energie-meter (dagtotaal t.o.v. de basis van deze dag) ----
   renderEnergyGauge() {
-    const baseline = 20;
-    const scaleMax = 40; // basis ligt op 50%
+    const baseline = getBaseline(this.dayKey);
+    const scaleMax = baseline * 2; // basis ligt op 50%
     const total = dayTotalPoints(this.dayKey);
     const fillPct = Math.max(0, Math.min(total / scaleMax * 100, 100));
     let color = 'var(--green)';

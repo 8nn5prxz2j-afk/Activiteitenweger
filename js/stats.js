@@ -85,7 +85,7 @@ const Stats = {
   renderStatsPanel(dayKey) {
     const s = this.getDaySummary(dayKey);
 
-    const baseline = 20;
+    const baseline = getBaseline(dayKey);
     const diff = s.dagtotaal - baseline;
     const diffStr = diff >= 0 ? `+${this.fmt(diff)}` : this.fmt(diff);
     const diffColor = diff <= 0 ? '#4CAF50' : '#f44336';
@@ -100,7 +100,7 @@ const Stats = {
           </div>
           <div class="stat-card">
             <div class="stat-value" style="color:${diffColor}">${diffStr}</div>
-            <div class="stat-label">vs. basis (20)</div>
+            <div class="stat-label">vs. basis (${baseline})</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${this.fmt(s.runAvgTotal)}</div>
@@ -128,15 +128,14 @@ const Stats = {
     const days = this.getAllDaysSorted();
     if (days.length === 0) return '<div class="stats-panel"><p style="color:#999">Nog geen data</p></div>';
 
-    const baseline = 20;
-    const totals = days.map(d => dayTotalPoints(d));
+    // Per dag de basis van díe dag gebruiken (historiek)
+    const rows = days.map(d => ({ pts: dayTotalPoints(d), base: getBaseline(d) }));
     const aantalDagen = days.length;
-    const gemDagtotaal = totals.reduce((s, v) => s + v, 0) / aantalDagen;
-    const dagenOver20 = totals.filter(v => v > baseline).length;
-    const afwijkingen = totals.map(v => v - baseline);
-    const gemAfwijking = afwijkingen.reduce((s, v) => s + v, 0) / aantalDagen;
+    const gemDagtotaal = rows.reduce((s, r) => s + r.pts, 0) / aantalDagen;
+    const dagenOver20 = rows.filter(r => r.pts > r.base).length;
+    const gemAfwijking = rows.reduce((s, r) => s + (r.pts - r.base), 0) / aantalDagen;
 
-    const avgColor = gemDagtotaal <= baseline ? '#4CAF50' : '#f44336';
+    const avgColor = gemAfwijking <= 0 ? '#4CAF50' : '#f44336';
     const afwColor = gemAfwijking <= 0 ? '#4CAF50' : '#f44336';
     const afwStr = gemAfwijking >= 0 ? `+${this.fmt(gemAfwijking)}` : this.fmt(gemAfwijking);
 
@@ -154,7 +153,7 @@ const Stats = {
           </div>
           <div class="stat-card">
             <div class="stat-value" style="color:${dagenOver20 > 0 ? '#f44336' : '#4CAF50'}">${dagenOver20}</div>
-            <div class="stat-label">Dagen > 20 pt</div>
+            <div class="stat-label">Dagen > basis</div>
           </div>
           <div class="stat-card">
             <div class="stat-value" style="color:${afwColor}">${afwStr}</div>

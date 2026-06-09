@@ -101,6 +101,7 @@ const Sync = {
     const data = {
       activities: getAllData(),
       energy: JSON.parse(localStorage.getItem(ENERGY_STORAGE_KEY) || '{}'),
+      baseline: getBaselineHistory(),
       lastModified: Date.now(),
     };
     this.lastWrite = Date.now();
@@ -177,6 +178,9 @@ const Sync = {
         setEnergyMarker(dayKey, mins);
       }
     }
+
+    // Merge baseline-historiek
+    mergeBaselineHistory(remote.baseline);
   },
 
   // Start listening for real-time changes

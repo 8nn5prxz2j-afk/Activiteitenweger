@@ -261,6 +261,16 @@ const App = {
             <input type="file" accept=".json" style="display:none" onchange="importDataFromFile(this)">
           </label>
         </div>
+        <h3 class="more-subtitle">🎯 Basisniveau</h3>
+        <div class="baseline-row">
+          <div class="duration-stepper">
+            <button type="button" class="dur-btn" onclick="App.stepBaseline(-1)" aria-label="Basis 1 lager">−</button>
+            <span class="dur-display" id="baselineValue">${getBaseline(todayStr())}</span>
+            <button type="button" class="dur-btn" onclick="App.stepBaseline(1)" aria-label="Basis 1 hoger">+</button>
+          </div>
+          <button class="btn btn-primary" onclick="App.saveBaseline()">Opslaan</button>
+        </div>
+        <p class="baseline-hint">Geldt vanaf vandaag — eerdere dagen behouden hun oude basis (ook in de grafiek).</p>
         <h3 class="more-subtitle">🔄 Synchronisatie</h3>
         ${Sync.renderSyncPanel()}
         <div class="modal-actions">
@@ -269,6 +279,25 @@ const App = {
       </div>
     `;
     document.body.appendChild(overlay);
+  },
+
+  stepBaseline(delta) {
+    const el = document.getElementById('baselineValue');
+    if (!el) return;
+    let v = (parseInt(el.textContent) || DEFAULT_BASELINE) + delta;
+    v = Math.max(5, Math.min(v, 60));
+    el.textContent = String(v);
+  },
+
+  saveBaseline() {
+    const el = document.getElementById('baselineValue');
+    if (!el) return;
+    const v = parseInt(el.textContent);
+    if (!v) return;
+    setBaselineFrom(v);
+    document.getElementById('moreModal')?.remove();
+    this.navigate(this.currentView);
+    if (typeof Toast !== 'undefined') Toast.show(`🎯 Basisniveau ${v} — geldt vanaf vandaag`);
   },
 
   openSyncModal() {

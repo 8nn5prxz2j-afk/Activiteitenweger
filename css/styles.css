@@ -1146,6 +1146,19 @@ body {
 .more-import { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .more-subtitle { margin: 18px 0 4px; font-size: 15px; }
 
+.baseline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+.baseline-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
 /* ---- Activiteiten-kiezer (volledige lijst) ---- */
 .activity-picker {
   max-height: 60vh;

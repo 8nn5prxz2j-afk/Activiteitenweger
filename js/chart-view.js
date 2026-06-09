@@ -49,11 +49,11 @@ const ChartView = {
     const totals = days.map(d => dayTotalPoints(d));
     const avg = totals.reduce((s, v) => s + v, 0) / totals.length;
     const latest = totals[totals.length - 1];
-    const baseline = 20;
 
     const fmtAvg = avg % 1 === 0 ? avg : avg.toFixed(1);
     const fmtLatest = latest % 1 === 0 ? latest : latest.toFixed(1);
-    const diff = avg - baseline;
+    // Gemiddelde afwijking t.o.v. de basis van elke dag afzonderlijk (historiek)
+    const diff = days.reduce((s, d) => s + (dayTotalPoints(d) - getBaseline(d)), 0) / days.length;
     const diffStr = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
     const diffColor = diff <= 0 ? '#4CAF50' : '#f44336';
 
@@ -68,7 +68,7 @@ const ChartView = {
       </div>
       <div class="chart-stat">
         <span class="chart-stat-value" style="color:${diffColor}">${diffStr}</span>
-        <span class="chart-stat-label">vs. basis (20)</span>
+        <span class="chart-stat-label">vs. basis</span>
       </div>
       <div class="chart-stat">
         <span class="chart-stat-value">${days.length}</span>
@@ -90,40 +90,59 @@ const ChartView = {
     if (data.labels.length === 0) return;
 
     const ctx = canvas.getContext('2d');
-    const baseline = 20;
 
-    // Bar colors: green if <= baseline, red if > baseline
-    const barColors = data.values.map(v => v <= baseline ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)');
-    const barBorders = data.values.map(v => v <= baseline ? '#4CAF50' : '#f44336');
+    // Staafkleur per dag/week t.o.v. de basis van díe periode (historiek)
+    const barColors = data.values.map((v, i) => v <= data.baselines[i] ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)');
+    const barBorders = data.values.map((v, i) => v <= data.baselines[i] ? '#4CAF50' : '#f44336');
+
+    const datasets = [
+      {
+        label: this.mode === 'day' ? 'Dagtotaal' : 'Week gem.',
+        data: data.values,
+        backgroundColor: barColors,
+        borderColor: barBorders,
+        borderWidth: 1,
+        borderRadius: 4,
+        order: 2,
+      },
+      {
+        label: 'Lopend gemiddelde',
+        data: data.runningAvg,
+        type: 'line',
+        borderColor: '#1a237e',
+        backgroundColor: 'rgba(26, 35, 126, 0.1)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#1a237e',
+        tension: 0.3,
+        fill: false,
+        order: 1,
+      },
+    ];
+
+    // Basislijn: één annotatie-lijn als de basis constant is; anders een
+    // gestippelde stepped-lijn die de historiek volgt.
+    const allSameBaseline = data.baselines.every(b => b === data.baselines[0]);
+    if (!allSameBaseline) {
+      datasets.push({
+        label: 'Basis',
+        data: data.baselines,
+        type: 'line',
+        borderColor: '#FF9800',
+        borderWidth: 2,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        stepped: true,
+        fill: false,
+        order: 0,
+      });
+    }
 
     this.chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: data.labels,
-        datasets: [
-          {
-            label: this.mode === 'day' ? 'Dagtotaal' : 'Week gem.',
-            data: data.values,
-            backgroundColor: barColors,
-            borderColor: barBorders,
-            borderWidth: 1,
-            borderRadius: 4,
-            order: 2,
-          },
-          {
-            label: 'Lopend gemiddelde',
-            data: data.runningAvg,
-            type: 'line',
-            borderColor: '#1a237e',
-            backgroundColor: 'rgba(26, 35, 126, 0.1)',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#1a237e',
-            tension: 0.3,
-            fill: false,
-            order: 1,
-          },
-        ],
+        datasets,
       },
       options: {
         responsive: true,
@@ -138,17 +157,17 @@ const ChartView = {
             labels: { usePointStyle: true, padding: 16 },
           },
           annotation: {
-            annotations: {
+            annotations: allSameBaseline ? {
               baseline: {
                 type: 'line',
-                yMin: baseline,
-                yMax: baseline,
+                yMin: data.baselines[0],
+                yMax: data.baselines[0],
                 borderColor: '#FF9800',
                 borderWidth: 2,
                 borderDash: [6, 4],
                 label: {
                   display: true,
-                  content: `Basisniveau (${baseline})`,
+                  content: `Basisniveau (${data.baselines[0]})`,
                   position: 'start',
                   backgroundColor: '#FF9800',
                   color: 'white',
@@ -156,7 +175,7 @@ const ChartView = {
                   padding: 4,
                 },
               },
-            },
+            } : {},
           },
         },
         scales: {
@@ -184,6 +203,7 @@ const ChartView = {
     const labels = [];
     const values = [];
     const runningAvg = [];
+    const baselines = [];
     let sum = 0;
 
     days.forEach((dayKey, i) => {
@@ -193,16 +213,17 @@ const ChartView = {
 
       const pts = dayTotalPoints(dayKey);
       values.push(pts);
+      baselines.push(getBaseline(dayKey));
       sum += pts;
       runningAvg.push(Math.round((sum / (i + 1)) * 10) / 10);
     });
 
-    return { labels, values, runningAvg };
+    return { labels, values, runningAvg, baselines };
   },
 
   getWeekData() {
     const days = getSavedDays();
-    if (days.length === 0) return { labels: [], values: [], runningAvg: [] };
+    if (days.length === 0) return { labels: [], values: [], runningAvg: [], baselines: [] };
 
     // Group days by ISO week, track first date per week
     const weeks = {};
@@ -222,6 +243,7 @@ const ChartView = {
     const labels = [];
     const values = [];
     const runningAvg = [];
+    const baselines = [];
     let totalSum = 0;
     let totalCount = 0;
 
@@ -231,11 +253,12 @@ const ChartView = {
       const monday = getMonday(weekFirstDate[weekKey]);
       labels.push(`${monday.getDate()}/${monday.getMonth() + 1}`);
       values.push(Math.round(avg * 10) / 10);
+      baselines.push(getBaseline(dateStr(monday)));
       totalSum += avg;
       totalCount++;
       runningAvg.push(Math.round((totalSum / totalCount) * 10) / 10);
     });
 
-    return { labels, values, runningAvg };
+    return { labels, values, runningAvg, baselines };
   },
 };
