@@ -146,6 +146,7 @@ const Sync = {
       activities: getAllData(),
       energy: JSON.parse(localStorage.getItem(ENERGY_STORAGE_KEY) || '{}'),
       baseline: getBaselineHistory(),
+      meta: getMeta(),
       lastModified: Date.now(),
     };
     this.lastWrite = Date.now();
@@ -193,34 +194,62 @@ const Sync = {
     });
   },
 
-  // Merge remote data into local storage
+  // Merge remote data into local storage.
+  // Per dag wint de kant met de nieuwste meta-timestamp; zo blijven
+  // verwijderingen (tombstones: recente timestamp + geen data) behouden.
+  // Dagen zonder meta aan beide kanten (oude data) volgen het oude
+  // union-gedrag: remote vult lege lokale dagen aan.
   mergeRemoteData(remote) {
     if (!remote) return;
 
-    // Merge activities
-    if (remote.activities) {
-      const local = getAllData();
-      let changed = false;
-      for (const [dayKey, acts] of Object.entries(remote.activities)) {
-        if (!local[dayKey] || local[dayKey].length === 0) {
-          local[dayKey] = acts;
+    const remoteData = remote.activities || {};
+    const remoteEnergy = remote.energy || {};
+    const remoteMeta = remote.meta || {};
+    const localData = getAllData();
+    const localEnergy = JSON.parse(localStorage.getItem(ENERGY_STORAGE_KEY) || '{}');
+    const localMeta = getMeta();
+
+    const allDays = new Set([
+      ...Object.keys(localData), ...Object.keys(remoteData),
+      ...Object.keys(localEnergy), ...Object.keys(remoteEnergy),
+      ...Object.keys(localMeta), ...Object.keys(remoteMeta),
+    ]);
+
+    let changed = false;
+    allDays.forEach(day => {
+      const lm = localMeta[day]?.m || 0;
+      const rm = remoteMeta[day]?.m || 0;
+      if (rm > lm) {
+        // Remote is nieuwer voor deze dag — data én energiestreep overnemen
+        const rActs = remoteData[day];
+        if (rActs && rActs.length > 0) localData[day] = rActs;
+        else delete localData[day];
+        if (remoteEnergy[day] != null) localEnergy[day] = remoteEnergy[day];
+        else delete localEnergy[day];
+        localMeta[day] = { m: rm };
+        changed = true;
+      } else if (lm === 0 && rm === 0) {
+        // Geen meta (oude data): remote vult alleen lege lokale dagen aan
+        if (remoteData[day] && (!localData[day] || localData[day].length === 0)) {
+          localData[day] = remoteData[day];
           changed = true;
-        } else if (JSON.stringify(local[dayKey]) !== JSON.stringify(acts)) {
-          // Remote has different data — use the one with more activities
-          // or the remote version if it was modified later
-          local[dayKey] = acts;
+        }
+        if (remoteEnergy[day] != null && localEnergy[day] == null) {
+          localEnergy[day] = remoteEnergy[day];
           changed = true;
         }
       }
-      // Also check for days that exist locally but not remotely (deleted remotely)
-      if (changed) saveAllData(local);
-    }
+      // lm >= rm: lokaal is nieuwer of gelijk — niets doen
+    });
 
-    // Merge energy markers
-    if (remote.energy) {
-      for (const [dayKey, mins] of Object.entries(remote.energy)) {
-        setEnergyMarker(dayKey, mins);
+    if (changed) {
+      try {
+        localStorage.setItem(ENERGY_STORAGE_KEY, JSON.stringify(localEnergy));
+      } catch (e) {
+        notifyStorageError(e);
       }
+      saveMeta(localMeta);
+      saveAllData(localData);
     }
 
     // Merge baseline-historiek

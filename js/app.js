@@ -77,6 +77,14 @@ const App = {
       }
     }, 60000);
 
+    // Multi-tab: wijzigingen uit een andere tab overnemen
+    window.addEventListener('storage', (e) => {
+      if (e.key && e.key.startsWith('activiteitenweger')) {
+        invalidateDataCache();
+        this.navigate(this.currentView);
+      }
+    });
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (document.querySelector('.modal-overlay.open')) {

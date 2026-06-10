@@ -164,6 +164,28 @@ function getDayActivities(dayKey) {
   return getAllData()[dayKey] || [];
 }
 
+// ---- Meta: laatste-wijziging-timestamp per dag ----
+// Nodig voor sync: een dag verwijderen laat een "tombstone" achter (recente
+// timestamp + geen data), zodat de verwijdering niet ongedaan wordt gemaakt
+// door een merge met een ander apparaat.
+const META_KEY = 'activiteitenweger_meta';
+
+function getMeta() {
+  try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveMeta(meta) {
+  try { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+  catch (e) { /* meta is hulpdata; hoofddata-fouten melden we al */ }
+}
+
+function touchMeta(dayKey) {
+  const meta = getMeta();
+  meta[dayKey] = { m: Date.now() };
+  saveMeta(meta);
+}
+
 function saveDayActivities(dayKey, activities) {
   const data = getAllData();
   if (activities.length === 0) {
@@ -171,6 +193,7 @@ function saveDayActivities(dayKey, activities) {
   } else {
     data[dayKey] = activities;
   }
+  touchMeta(dayKey);
   saveAllData(data);
 }
 
@@ -318,6 +341,7 @@ function setEnergyMarker(dayKey, minutes) {
   } catch (e) {
     notifyStorageError(e);
   }
+  touchMeta(dayKey);
   if (typeof Sync !== 'undefined') Sync.pushDebounced();
 }
 
@@ -380,6 +404,7 @@ function exportDataAsJSON() {
     activities: getAllData(),
     energy: JSON.parse(localStorage.getItem(ENERGY_STORAGE_KEY) || '{}'),
     baseline: getBaselineHistory(),
+    meta: getMeta(),
     exportDate: new Date().toISOString(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -422,6 +447,15 @@ function importDataFromFile(input) {
 
       // Merge baseline-historiek
       mergeBaselineHistory(data.baseline);
+
+      // Merge meta (nieuwste timestamp per dag wint)
+      if (data.meta) {
+        const meta = getMeta();
+        for (const [key, m] of Object.entries(data.meta)) {
+          if (!meta[key] || (m?.m || 0) > meta[key].m) meta[key] = m;
+        }
+        saveMeta(meta);
+      }
 
       document.getElementById('moreModal')?.remove();
       Toast.show(`📂 Import geslaagd — ${imported} nieuwe dagen toegevoegd`);

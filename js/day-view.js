@@ -310,16 +310,24 @@ const DayView = {
     const r = getRunning();
     if (!r) return;
     const endLimit = END_HOUR * 60;
-    let endM = (r.dayKey === todayStr()) ? nowRoundedMinutes() : endLimit;
+    const stale = r.dayKey !== todayStr(); // vergeten te stoppen op een vorige dag
+    let endM = stale ? endLimit : nowRoundedMinutes();
     if (endM > endLimit) endM = endLimit;
     let dur = endM - r.startMinutes;
     if (dur < 15) dur = 15;
+    // Vergeten sessies niet laten doortellen tot middernacht: cap op 2 uur
+    if (stale && dur > 120) dur = 120;
     if (r.startMinutes + dur > endLimit) dur = endLimit - r.startMinutes;
     if (dur >= 15) {
       const acts = getDayActivities(r.dayKey);
       acts.push({ id: 'act_' + Date.now(), name: r.name, startMinutes: r.startMinutes, durationMinutes: dur });
       acts.sort((a, b) => a.startMinutes - b.startMinutes);
       saveDayActivities(r.dayKey, acts);
+      if (stale) {
+        Toast.show(`⏱️ "${r.name}" liep nog — afgesloten op ${formatDuration(dur)}. Pas aan indien nodig.`, { duration: 7000 });
+      } else if (dur >= 360) {
+        Toast.show(`⏱️ "${r.name}" liep ${formatDuration(dur)} — klopt dat? Tik op het blok om aan te passen.`, { duration: 7000 });
+      }
     }
     setRunning(null);
   },
