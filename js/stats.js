@@ -91,6 +91,14 @@ const Stats = {
     const diffStr = diff >= 0 ? `+${this.fmt(diff)}` : this.fmt(diff);
     const diffColor = diff <= 0 ? '#4CAF50' : '#f44336';
 
+    // Gepland-kaart alleen tonen als er geplande punten zijn
+    const plannedPts = dayPlannedPoints(dayKey);
+    const plannedCard = plannedPts !== 0 ? `
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--orange-text)">${this.fmt(plannedPts)}</div>
+            <div class="stat-label">Gepland</div>
+          </div>` : '';
+
     return `
       <div class="stats-panel">
         <div class="stats-title">📊 Statistieken</div>
@@ -103,6 +111,7 @@ const Stats = {
             <div class="stat-value" style="color:${diffColor}">${diffStr}</div>
             <div class="stat-label">vs. basis (${baseline})</div>
           </div>
+          ${plannedCard}
           <div class="stat-card">
             <div class="stat-value">${this.fmt(s.runAvgTotal)}</div>
             <div class="stat-label">Gem. dagtotaal</div>

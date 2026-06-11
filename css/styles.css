@@ -1148,6 +1148,7 @@ body {
   z-index: 2;
 }
 .eg-diff { font-size: 11px; font-weight: 600; margin-top: 3px; }
+.eg-planned-val { font-size: 12px; font-weight: 600; color: var(--orange-text); }
 
 /* ---- Dag-starter (lege dag) ---- */
 .day-starter {
@@ -1251,6 +1252,133 @@ body {
 .month-total-badge.badge-low { background: var(--yellow-bg); color: var(--yellow-text); }
 .month-total-badge.badge-mid { background: var(--orange-bg); color: var(--orange-text); }
 .month-total-badge.badge-high { background: var(--red-bg); color: var(--red-text); }
+
+/* ---- Segmented control (modal status-toggle) ---- */
+.segmented-control {
+  display: flex;
+  background: var(--surface-3);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+.seg-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.seg-btn.seg-active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+/* ---- Geplande activiteitsblokken ---- */
+/* Gearceerde overlay bovenop de categorie-achtergrond */
+.activity-block.planned {
+  opacity: 0.82;
+  border-left-style: dashed;
+  /* Diagonale arcering als overlay via meerdere achtergrondlagen */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.18) 0px,
+    rgba(255,255,255,0.18) 4px,
+    transparent 4px,
+    transparent 10px
+  );
+  background-size: 14px 14px;
+}
+/* Dark mode: donkerdere arcering voor leesbaarheid */
+@media (prefers-color-scheme: dark) {
+  .activity-block.planned {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(0,0,0,0.25) 0px,
+      rgba(0,0,0,0.25) 4px,
+      transparent 4px,
+      transparent 10px
+    );
+  }
+}
+
+/* GEPLAND-label in de meta-regel */
+.act-planned-label {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.12);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+@media (prefers-color-scheme: dark) {
+  .act-planned-label {
+    background: rgba(255,255,255,0.15);
+  }
+}
+
+/* ✓ Gedaan-knop op geplande blokken */
+.act-done {
+  position: absolute;
+  top: 2px;
+  right: 24px; /* naast de ×-knop */
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #4CAF50;
+  display: none;
+  line-height: 1;
+  font-weight: 700;
+}
+.activity-block.planned:hover .act-done { display: block; }
+.act-done:hover { color: #2E7D32; }
+
+/* Op mobiel altijd zichtbaar en groot genoeg om te tikken */
+@media (max-width: 768px) {
+  .act-done { display: block; padding: 8px 6px; font-size: 16px; top: 0; right: 22px; }
+}
+
+/* ---- Energie-gauge: planned segment ---- */
+/* background-color wordt via inline style gezet (de kleur-variabele);
+   background-image legt de arcering erbovenop. */
+.eg-fill-planned {
+  position: absolute;
+  top: 0; bottom: 0;
+  border-radius: 0 999px 999px 0;
+  opacity: 0.6;
+  /* arcering als tweede laag; eerste laag = inline background-color */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.35) 0px,
+    rgba(255,255,255,0.35) 3px,
+    transparent 3px,
+    transparent 8px
+  );
+  transition: width 0.35s ease, left 0.35s ease;
+}
+@media (prefers-color-scheme: dark) {
+  .eg-fill-planned {
+    opacity: 0.5;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(0,0,0,0.3) 0px,
+      rgba(0,0,0,0.3) 3px,
+      transparent 3px,
+      transparent 8px
+    );
+  }
+}
 
 /* ---- Toast (melding met optionele undo) ---- */
 #toast {

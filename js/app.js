@@ -262,9 +262,40 @@ const App = {
     delBtn.style.display = opts.editing ? 'inline-block' : 'none';
     previewEl.textContent = '';
 
+    // Status-toggle: tonen voor vandaag en toekomst; verborgen voor verleden
+    const toggleGroup = document.getElementById('statusToggleGroup');
+    const dayKey = this.currentView === 'day' ? dateStr(this.currentDate) : null;
+    const today = todayStr();
+    const isFuture = dayKey && dayKey > today;
+    const isToday = dayKey && dayKey === today;
+    const showToggle = isToday || isFuture;
+    toggleGroup.style.display = showToggle ? '' : 'none';
+
+    // Bepaal initiële status: bij bewerken de huidige waarde; anders dag-default
+    let initStatus = 'done';
+    if (opts.status === 'planned') {
+      initStatus = 'planned';
+    } else if (!opts.editing && isFuture) {
+      initStatus = 'planned'; // toekomstige dag: default gepland
+    }
+    this.setModalStatus(initStatus);
+
     if (opts.name) this.updateModalPreview();
 
     modal.classList.add('open');
+  },
+
+  // Stel de actieve status in het segmented control in
+  setModalStatus(value) {
+    document.querySelectorAll('#statusToggle .seg-btn').forEach(btn => {
+      btn.classList.toggle('seg-active', btn.dataset.value === value);
+    });
+  },
+
+  // Haal de huidige geselecteerde status op uit het modal
+  getModalStatus() {
+    const active = document.querySelector('#statusToggle .seg-btn.seg-active');
+    return active ? active.dataset.value : 'done';
   },
 
   // Duur aanpassen in stappen van 15 min (15 min – 8 uur)
@@ -311,8 +342,13 @@ const App = {
     const [h, m] = timeStr.split(':').map(Number);
     const startMins = h * 60 + m;
 
+    // Haal status op uit de toggle (alleen relevant als die zichtbaar is)
+    const toggleGroup = document.getElementById('statusToggleGroup');
+    const statusVisible = toggleGroup && toggleGroup.style.display !== 'none';
+    const status = statusVisible ? this.getModalStatus() : 'done';
+
     if (this.currentView === 'day') {
-      DayView.saveFromModal(name, startMins, dur);
+      DayView.saveFromModal(name, startMins, dur, status);
     }
     this.closeModal();
   },

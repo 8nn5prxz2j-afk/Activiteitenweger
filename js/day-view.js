@@ -101,9 +101,10 @@ const DayView = {
       const top = ((act.startMinutes - START_HOUR * 60) / 15) * SLOT_HEIGHT;
       const height = (act.durationMinutes / 15) * SLOT_HEIGHT;
       const pts = calcPoints(act.name, act.durationMinutes);
+      const planned = isPlanned(act);
 
       const div = document.createElement('div');
-      div.className = `activity-block cat-${info.weight}`;
+      div.className = `activity-block cat-${info.weight}${planned ? ' planned' : ''}`;
       div.style.top = top + 'px';
       div.style.height = Math.max(height, 24) + 'px';
       div.onmousedown = (e) => DayView.startMove(e, act.id);
@@ -121,11 +122,18 @@ const DayView = {
         DayView.openEditModal(act.id);
       };
 
-      const meta = `${formatTime(act.startMinutes)} – ${formatTime(act.startMinutes + act.durationMinutes)} · ${formatDuration(act.durationMinutes)} · ${pts > 0 ? '+' : ''}${pts} pt`;
+      const metaBase = `${formatTime(act.startMinutes)} – ${formatTime(act.startMinutes + act.durationMinutes)} · ${formatDuration(act.durationMinutes)} · ${pts > 0 ? '+' : ''}${pts} pt`;
+      const metaLabel = planned ? `${metaBase}<span class="act-planned-label">GEPLAND</span>` : metaBase;
+
+      // ✓-knop alleen op geplande blokken
+      const doneBtn = planned
+        ? `<button class="act-done" onclick="event.stopPropagation();DayView.markDone('${act.id}')" title="Markeer als gedaan">✓</button>`
+        : '';
 
       div.innerHTML = `
         <span class="act-name">${act.name}</span>
-        ${height >= 36 ? `<span class="act-meta">${meta}</span>` : ''}
+        ${height >= 36 ? `<span class="act-meta">${metaLabel}</span>` : ''}
+        ${doneBtn}
         <button class="act-delete" onclick="event.stopPropagation();DayView.deleteActivityById('${act.id}')" title="Verwijderen">×</button>
         <div class="resize-handle" onmousedown="DayView.startResize(event, '${act.id}')"></div>
       `;
@@ -236,13 +244,16 @@ const DayView = {
     if (this.dayKey === todayStr()) {
       this.startLive(name);
     } else {
-      // Vorige dag: snel een blok van 30 min achteraan toevoegen
+      // Niet-vandaag: snel een blok van 30 min achteraan toevoegen
       let start = this.activities.length > 0
         ? this.activities[this.activities.length - 1].startMinutes + this.activities[this.activities.length - 1].durationMinutes
         : 9 * 60;
       if (start < START_HOUR * 60) start = START_HOUR * 60;
       if (start > END_HOUR * 60 - 30) start = END_HOUR * 60 - 30;
-      this.activities.push({ id: 'act_' + Date.now(), name, startMinutes: start, durationMinutes: 30 });
+      const blok = { id: 'act_' + Date.now(), name, startMinutes: start, durationMinutes: 30 };
+      // Toekomstige dag: automatisch gepland
+      if (this.dayKey > todayStr()) blok.status = 'planned';
+      this.activities.push(blok);
       this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
       this.save();
       this.renderActivities();
@@ -332,27 +343,47 @@ const DayView = {
     setRunning(null);
   },
 
-  // ---- Energie-meter (dagtotaal t.o.v. de basis van deze dag) ----
+  // ---- Energie-meter (dagtotaal + geplande punten t.o.v. de basis van deze dag) ----
   renderEnergyGauge() {
     const baseline = getBaseline(this.dayKey);
     const scaleMax = baseline * 2; // basis ligt op 50%
     const total = dayTotalPoints(this.dayKey);
+    const planned = dayPlannedPoints(this.dayKey);
+    const combined = total + planned;
+
+    // Werkelijk segment
     const fillPct = Math.max(0, Math.min(total / scaleMax * 100, 100));
     let color = 'var(--green)';
     if (total > baseline) color = 'var(--red)';
     else if (total > baseline * 0.8) color = 'var(--orange)';
-    const diff = total - baseline;
+
+    // Gepland segment: kleur bepaald door gecombineerde waarde
+    let plannedColor = 'var(--orange)';
+    if (combined > baseline) plannedColor = 'var(--red)';
+    const plannedStartPct = fillPct;
+    const plannedWidthPct = planned > 0
+      ? Math.min(planned / scaleMax * 100, 100 - fillPct)
+      : 0;
+
+    // Diff-tekst op basis van gecombineerde waarde
+    const diff = combined - baseline;
     const diffStr = diff > 0 ? `+${this.fmtPts(diff)} boven basis` : `${this.fmtPts(-diff)} onder basis`;
     const diffColor = diff > 0 ? 'var(--red)' : 'var(--green)';
+
+    // Valuetekst: toon "werkelijk + X gepland / basis" alleen als er iets gepland is
+    const valStr = planned > 0
+      ? `${this.fmtPts(total)} <span class="eg-planned-val">+ ${this.fmtPts(planned)} gepland</span> <span class="eg-base">/ ${baseline} basis</span>`
+      : `${this.fmtPts(total)} <span class="eg-base">/ ${baseline} basis</span>`;
 
     return `
       <div class="energy-gauge">
         <div class="eg-head">
           <span class="eg-title">🔋 Dagenergie</span>
-          <span class="eg-val">${this.fmtPts(total)} <span class="eg-base">/ ${baseline} basis</span></span>
+          <span class="eg-val">${valStr}</span>
         </div>
         <div class="eg-bar">
           <div class="eg-fill" style="width:${fillPct}%;background:${color}"></div>
+          ${planned > 0 ? `<div class="eg-fill-planned" style="left:${plannedStartPct}%;width:${plannedWidthPct}%;background-color:${plannedColor}"></div>` : ''}
           <div class="eg-marker" style="left:${baseline / scaleMax * 100}%" title="Basis ${baseline}"></div>
         </div>
         <div class="eg-diff" style="color:${diffColor}">${diffStr}</div>
@@ -367,8 +398,11 @@ const DayView = {
   fillStandardDay() {
     if (this.activities.length > 0 &&
         !confirm('Deze dag bevat al activiteiten. Toch de standaardblokken toevoegen?')) return;
+    const isFuture = this.dayKey > todayStr();
     STANDARD_DAY.forEach((b, i) => {
-      this.activities.push({ id: 'act_' + Date.now() + '_' + i, name: b.name, startMinutes: b.startMinutes, durationMinutes: b.durationMinutes });
+      const blok = { id: 'act_' + Date.now() + '_' + i, name: b.name, startMinutes: b.startMinutes, durationMinutes: b.durationMinutes };
+      if (isFuture) blok.status = 'planned';
+      this.activities.push(blok);
     });
     this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
     this.save();
@@ -381,8 +415,11 @@ const DayView = {
     if (!prev) { alert('Geen eerdere dag met gegevens gevonden.'); return; }
     if (this.activities.length > 0 &&
         !confirm('Deze dag bevat al activiteiten. Toch de blokken van de vorige dag toevoegen?')) return;
+    const isFuture = this.dayKey > todayStr();
     getDayActivities(prev).forEach((a, i) => {
-      this.activities.push({ id: 'act_' + Date.now() + '_' + i, name: a.name, startMinutes: a.startMinutes, durationMinutes: a.durationMinutes });
+      const blok = { id: 'act_' + Date.now() + '_' + i, name: a.name, startMinutes: a.startMinutes, durationMinutes: a.durationMinutes };
+      if (isFuture) blok.status = 'planned';
+      this.activities.push(blok);
     });
     this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
     this.save();
@@ -493,7 +530,10 @@ const DayView = {
     e.preventDefault();
     e.currentTarget.classList.remove('drop-target');
     if (!this.dragActivity) return;
-    this.activities.push({ id: 'act_' + Date.now(), name: this.dragActivity, startMinutes: minutes, durationMinutes: 30 });
+    const blok = { id: 'act_' + Date.now(), name: this.dragActivity, startMinutes: minutes, durationMinutes: 30 };
+    // Toekomstige dag: automatisch gepland
+    if (this.dayKey > todayStr()) blok.status = 'planned';
+    this.activities.push(blok);
     this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
     this.dragActivity = null;
     this.save();
@@ -515,15 +555,27 @@ const DayView = {
     const act = this.activities.find(a => a.id === id);
     if (!act) return;
     this.editingId = id;
-    App.openModal({ name: act.name, startMinutes: act.startMinutes, durationMinutes: act.durationMinutes, editing: true });
+    App.openModal({ name: act.name, startMinutes: act.startMinutes, durationMinutes: act.durationMinutes, editing: true, status: act.status });
   },
 
-  saveFromModal(name, startMins, dur) {
+  saveFromModal(name, startMins, dur, status) {
     if (this.editingId) {
       const act = this.activities.find(a => a.id === this.editingId);
-      if (act) { act.name = name; act.startMinutes = startMins; act.durationMinutes = dur; }
+      if (act) {
+        act.name = name;
+        act.startMinutes = startMins;
+        act.durationMinutes = dur;
+        // Status bijwerken: 'planned' bewaren, anders veld verwijderen (= gedaan)
+        if (status === 'planned') {
+          act.status = 'planned';
+        } else {
+          delete act.status;
+        }
+      }
     } else {
-      this.activities.push({ id: 'act_' + Date.now(), name, startMinutes: startMins, durationMinutes: dur });
+      const blok = { id: 'act_' + Date.now(), name, startMinutes: startMins, durationMinutes: dur };
+      if (status === 'planned') blok.status = 'planned';
+      this.activities.push(blok);
     }
     this.activities.sort((a, b) => a.startMinutes - b.startMinutes);
     this.editingId = null;
@@ -554,6 +606,32 @@ const DayView = {
       const dayKey = this.dayKey;
       Toast.show(`"${act.name}" verwijderd`, { undo: () => this.restoreActivities(dayKey, [act]) });
     }
+  },
+
+  // Markeer een gepland blok als gedaan: verwijder het status-veld en her-render
+  markDone(id) {
+    const act = this.activities.find(a => a.id === id);
+    if (!act) return;
+    const prevStatus = act.status; // bewaren voor undo
+    delete act.status;
+    this.save();
+    this.renderActivities();
+    App.updateDayTotal(this.dayKey);
+    const dayKey = this.dayKey;
+    Toast.show(`"${act.name}" gedaan ✓`, { undo: () => {
+      // Zet de status terug (ook als de gebruiker intussen navigeerde)
+      const list = getDayActivities(dayKey);
+      const found = list.find(a => a.id === id);
+      if (found) {
+        found.status = prevStatus;
+        saveDayActivities(dayKey, list);
+        if (this.dayKey === dayKey) {
+          this.activities = list;
+          this.renderActivities();
+          App.updateDayTotal(dayKey);
+        }
+      }
+    }});
   },
 
   // Zet eerder verwijderde blokken terug (ook als de gebruiker intussen
