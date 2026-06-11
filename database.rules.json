@@ -1,0 +1,33 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      ".read": false,
+      ".write": false,
+      "$room": {
+        ".read": "$room.matches(/^[A-HJ-NP-Z2-9]{14}$/)",
+        ".write": "$room.matches(/^[A-HJ-NP-Z2-9]{14}$/)",
+        ".validate": "newData.hasChildren()",
+        "activities": {
+          ".validate": true
+        },
+        "energy": {
+          ".validate": true
+        },
+        "baseline": {
+          ".validate": true
+        },
+        "meta": {
+          ".validate": true
+        },
+        "lastModified": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
