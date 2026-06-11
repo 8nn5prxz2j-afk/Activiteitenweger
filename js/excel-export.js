@@ -106,7 +106,8 @@ const ExcelExport = {
     });
 
     // --- Row 1: Naam ---
-    this.setCell(ws, 1, 0, `Naam:  Niels`, {
+    const _exportName = (typeof Onboarding !== 'undefined') ? Onboarding.getName() : '';
+    this.setCell(ws, 1, 0, `Naam:  ${_exportName}`, {
       font: this.mkFont(),
       fill: F.white,
       alignment: { horizontal: 'left' },

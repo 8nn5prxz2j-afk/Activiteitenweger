@@ -1616,3 +1616,185 @@ body.view-chart .legend { display: none; }
   .navbar { padding-top: max(10px, env(safe-area-inset-top)); }
   .legend { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
 }
+
+/* ---- Onboarding — fullscreen overlay ---- */
+/* Bedekt de volledige app; hogere z-index dan navbar (50) en tab-bar (60). */
+.ob-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* ---- Onboarding — kaart ---- */
+.ob-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.ob-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.ob-subtitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.ob-step-indicator {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ob-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+
+/* ---- Onboarding — formulier ---- */
+.ob-form-group {
+  margin-bottom: 16px;
+}
+
+.ob-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.ob-input:focus { border-color: var(--primary); }
+
+.ob-error-msg {
+  font-size: 13px;
+  color: #f44336;
+  margin-top: 6px;
+}
+
+.ob-error {
+  font-size: 14px;
+  color: #f44336;
+}
+
+/* Knop over de volledige breedte */
+.ob-btn-full {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---- Onboarding — basisniveau-stepper ---- */
+.ob-baseline-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.ob-stepper-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.ob-unit {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ob-baseline-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+/* ---- Installeer-banner ---- */
+.ob-install-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(58px + env(safe-area-inset-bottom)); /* boven de tab-bar op mobiel */
+  z-index: 80;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+}
+@media (prefers-color-scheme: dark) {
+  .ob-install-banner { background: #3d4faa; }
+}
+/* Desktop: banner hangt aan de onderkant van het venster */
+@media (min-width: 769px) {
+  .ob-install-banner { bottom: 0; }
+}
+/* PWA: banner staat boven de veilige zone onderaan */
+@media (display-mode: standalone) {
+  .ob-install-banner { bottom: max(58px, env(safe-area-inset-bottom)); }
+}
+
+.ob-install-icon { font-size: 18px; flex-shrink: 0; }
+
+.ob-install-text { flex: 1; line-height: 1.35; }
+
+.ob-install-close {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ob-install-close:hover { background: rgba(255,255,255,0.3); }
+
+/* ---- Meer-menu: naam-invoerveld ---- */
+.more-name-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  min-width: 0;
+}
+.more-name-input:focus { border-color: var(--primary); }

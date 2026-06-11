@@ -77,9 +77,16 @@ const App = {
       }
     }, 60000);
 
-    // Multi-tab: wijzigingen uit een andere tab overnemen
+    // Multi-tab: wijzigingen uit een andere tab overnemen.
+    // Onboarding-keys (access, profile, install_hint) bevatten geen activiteiten-
+    // data — die hoeven de datacache niet te invalideren en de view niet te renderen.
+    const _ONBOARDING_KEYS = new Set([
+      'activiteitenweger_access',
+      'activiteitenweger_profile',
+      'activiteitenweger_install_hint',
+    ]);
     window.addEventListener('storage', (e) => {
-      if (e.key && e.key.startsWith('activiteitenweger')) {
+      if (e.key && e.key.startsWith('activiteitenweger') && !_ONBOARDING_KEYS.has(e.key)) {
         invalidateDataCache();
         this.navigate(this.currentView);
       }
@@ -361,6 +368,7 @@ const App = {
   },
 
   openMoreModal() {
+    const currentName = (typeof Onboarding !== 'undefined') ? Onboarding.getName() : '';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay open';
     overlay.id = 'moreModal';
@@ -376,6 +384,18 @@ const App = {
             <input type="file" accept=".json" style="display:none" onchange="importDataFromFile(this)">
           </label>
         </div>
+        <h3 class="more-subtitle">👤 Naam</h3>
+        <div class="baseline-row">
+          <input
+            type="text"
+            id="moreNameInput"
+            class="more-name-input"
+            value="${currentName.replace(/"/g, '&quot;')}"
+            maxlength="30"
+            placeholder="Jouw voornaam"
+          >
+          <button class="btn btn-primary" onclick="App.saveName()">Opslaan</button>
+        </div>
         <h3 class="more-subtitle">🎯 Basisniveau</h3>
         <div class="baseline-row">
           <div class="duration-stepper">
@@ -389,11 +409,22 @@ const App = {
         <h3 class="more-subtitle">🔄 Synchronisatie</h3>
         ${Sync.renderSyncPanel()}
         <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="Onboarding.showInstallInstructions()">📲 Installeren als app</button>
           <button class="btn btn-secondary" onclick="document.getElementById('moreModal').remove()">Sluiten</button>
         </div>
       </div>
     `;
     document.body.appendChild(overlay);
+  },
+
+  saveName() {
+    const input = document.getElementById('moreNameInput');
+    if (!input) return;
+    const name = input.value.trim();
+    if (!name) return;
+    if (typeof Onboarding !== 'undefined') Onboarding.setName(name);
+    document.getElementById('moreModal')?.remove();
+    if (typeof Toast !== 'undefined') Toast.show(`👤 Naam opgeslagen: ${name}`);
   },
 
   stepBaseline(delta) {
@@ -434,7 +465,13 @@ const App = {
 };
 
 // Init on DOM ready
+// Aanpak: App.init() draait direct zodat het DOM-skelet altijd beschikbaar is.
+// Onboarding.check() toont bij nieuwe gebruikers een fullscreen overlay bovenop
+// de app — die overlay verhult de app zolang de flow loopt en verdwijnt pas
+// na succesvolle toegangs-/onboarding-afronding. Bij bestaande installaties
+// (Niels, met data) resolvet check() meteen zonder UI.
 document.addEventListener('DOMContentLoaded', () => {
   Sync.init();
   App.init();
+  Onboarding.check();
 });
