@@ -598,6 +598,110 @@ body {
 .week-block.cat-Gemiddeld { background: var(--orange-light); border-left: 3px solid var(--orange); }
 .week-block.cat-Zwaar { background: var(--red-light); border-left: 3px solid var(--red); }
 
+/* ---- Week-view: planned blokken (zelfde arcering als dag-view) ---- */
+.week-block.planned {
+  opacity: 0.82;
+  border-left-style: dashed;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.18) 0px,
+    rgba(255,255,255,0.18) 4px,
+    transparent 4px,
+    transparent 10px
+  );
+  background-size: 14px 14px;
+}
+@media (prefers-color-scheme: dark) {
+  .week-block.planned {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(0,0,0,0.25) 0px,
+      rgba(0,0,0,0.25) 4px,
+      transparent 4px,
+      transparent 10px
+    );
+  }
+}
+
+/* ---- Week-view: dagheader kleurcodering op basis van resterend budget ---- */
+.week-header-cell.budget-ok   { background: var(--green-light);  border-bottom: 3px solid var(--green); }
+.week-header-cell.budget-warn { background: var(--orange-light); border-bottom: 3px solid var(--orange); }
+.week-header-cell.budget-over { background: var(--red-light);    border-bottom: 3px solid var(--red); }
+/* "today" heeft prioriteit boven budget-kleuren — gecombineerde selectors */
+.week-header-cell.today.budget-ok   { background: #d4edda; border-bottom: 3px solid var(--green); }
+.week-header-cell.today.budget-warn { background: #fde8d5; border-bottom: 3px solid var(--orange); }
+.week-header-cell.today.budget-over { background: #fdd9d7; border-bottom: 3px solid var(--red); }
+
+.week-header-cell .day-planned { font-size: 10px; color: var(--orange-text); font-weight: 600; }
+.week-header-cell .day-free    { font-size: 10px; color: var(--text-secondary); }
+.week-header-cell .day-free.free-ok   { color: var(--green-text); }
+.week-header-cell .day-free.free-warn { color: var(--orange-text); }
+.week-header-cell .day-free.free-over { color: var(--red-text); font-weight: 700; }
+
+/* ---- Week-samenvattingsbalk ---- */
+.week-summary-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+  flex-shrink: 0;
+  /* Blijft links in beeld terwijl het weekgrid horizontaal scrollt */
+  position: sticky;
+  left: 0;
+}
+.wsb-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.wsb-label  { font-weight: 600; color: var(--text); font-size: 13px; }
+.wsb-detail { color: var(--text-secondary); font-size: 11px; }
+.wsb-warn   { font-size: 11px; font-weight: 700; color: var(--red-text); }
+
+/* Gestapelde voortgangsbalk (hergebruikt .eg-bar stijl) */
+.wsb-bar {
+  position: relative;
+  height: 10px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.wsb-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 999px 0 0 999px;
+  transition: width 0.35s ease, background 0.35s ease;
+}
+.wsb-fill-planned {
+  position: absolute;
+  top: 0; bottom: 0;
+  border-radius: 0 999px 999px 0;
+  opacity: 0.6;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.35) 0px,
+    rgba(255,255,255,0.35) 3px,
+    transparent 3px,
+    transparent 8px
+  );
+  transition: width 0.35s ease, left 0.35s ease;
+}
+@media (prefers-color-scheme: dark) {
+  .wsb-fill-planned {
+    opacity: 0.5;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(0,0,0,0.3) 0px,
+      rgba(0,0,0,0.3) 3px,
+      transparent 3px,
+      transparent 8px
+    );
+  }
+}
+
 /* ---- Month View ---- */
 .month-view {
   padding: 16px;
