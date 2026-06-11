@@ -37,7 +37,8 @@ const Stats = {
     return sum / days.length;
   },
 
-  // Weekgemiddelde over ingevulde dagen in de week van dayKey
+  // Weekgemiddelde over ingevulde dagen in de week van dayKey.
+  // Een dag telt alleen als ingevuld wanneer er minstens één NIET-gepland blok is.
   weekAvg(dayKey, valueFn) {
     const monday = getMonday(parseDate(dayKey));
     const weekDays = [];
@@ -45,7 +46,7 @@ const Stats = {
       const d = new Date(monday);
       d.setDate(d.getDate() + i);
       const key = dateStr(d);
-      if (getDayActivities(key).length > 0) {
+      if (getDayActivities(key).some(a => !isPlanned(a))) {
         weekDays.push(key);
       }
     }
@@ -125,7 +126,8 @@ const Stats = {
 
   // Render overview stats (for month view) — 4 key metrics
   renderOverviewTable() {
-    const days = this.getAllDaysSorted();
+    // Alleen dagen met minstens één werkelijk (niet-gepland) blok tellen als ingevuld
+    const days = this.getAllDaysSorted().filter(d => getDayActivities(d).some(a => !isPlanned(a)));
     if (days.length === 0) return '<div class="stats-panel"><p style="color:#999">Nog geen data</p></div>';
 
     // Per dag de basis van díe dag gebruiken (historiek)

@@ -33,7 +33,8 @@ const MonthView = {
       const isOther = d.getMonth() !== this.month;
       const isToday = key === today;
       const acts = getDayActivities(key);
-      const pts = acts.reduce((s, a) => s + calcPoints(a.name, a.durationMinutes), 0);
+      // Alleen werkelijke (niet-geplande) blokken tellen mee in het dagtotaal-badge
+      const pts = dayTotalPoints(key);
 
       // Show up to 3 activities
       let actsHtml = '';

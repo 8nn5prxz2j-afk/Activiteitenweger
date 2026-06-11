@@ -91,6 +91,12 @@ function calcPoints(name, durationMinutes) {
   return act.ptsPerHalf * (durationMinutes / 30);
 }
 
+// Geeft aan of een activiteitenblok gepland (nog niet gedaan) is.
+// Blokken zonder status-veld gelden als gedaan (achterwaarts compatibel).
+function isPlanned(act) {
+  return act && act.status === 'planned';
+}
+
 function formatDuration(mins) {
   if (mins < 60) return mins + ' min';
   const h = Math.floor(mins / 60);
@@ -119,9 +125,25 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
+// Som van punten van werkelijke (niet-geplande) blokken van een dag.
 function dayTotalPoints(dayKey) {
   const acts = getDayActivities(dayKey);
-  return acts.reduce((sum, a) => sum + calcPoints(a.name, a.durationMinutes), 0);
+  return acts
+    .filter(a => !isPlanned(a))
+    .reduce((sum, a) => sum + calcPoints(a.name, a.durationMinutes), 0);
+}
+
+// Som van punten van uitsluitend geplande blokken van een dag.
+function dayPlannedPoints(dayKey) {
+  const acts = getDayActivities(dayKey);
+  return acts
+    .filter(a => isPlanned(a))
+    .reduce((sum, a) => sum + calcPoints(a.name, a.durationMinutes), 0);
+}
+
+// Resterende ruimte: basislijn minus werkelijke punten minus geplande punten.
+function dayRemainingPoints(dayKey) {
+  return getBaseline(dayKey) - dayTotalPoints(dayKey) - dayPlannedPoints(dayKey);
 }
 
 // ---- Storage ----
@@ -345,16 +367,19 @@ function setEnergyMarker(dayKey, minutes) {
   if (typeof Sync !== 'undefined') Sync.pushDebounced();
 }
 
+// Subtotaal van punten tot een bepaald tijdstip (energiestreep).
+// Geplande blokken worden overgeslagen — enkel werkelijke activiteiten tellen.
 function calcPointsUntil(dayKey, untilMinutes) {
   const acts = getDayActivities(dayKey);
   let total = 0;
   acts.forEach(a => {
-    // Include activity if it ends at or before the marker
+    if (isPlanned(a)) return; // geplande blokken niet meetellen
+    // Blok volledig voor het tijdstip: volledig meetellen
     const actEnd = a.startMinutes + a.durationMinutes;
     if (actEnd <= untilMinutes) {
       total += calcPoints(a.name, a.durationMinutes);
     } else if (a.startMinutes < untilMinutes) {
-      // Partially overlapping: count the portion before the marker
+      // Gedeeltelijk overlappend: enkel het deel voor het tijdstip telt
       const partialDur = untilMinutes - a.startMinutes;
       total += calcPoints(a.name, partialDur);
     }

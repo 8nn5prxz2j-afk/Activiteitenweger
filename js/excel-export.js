@@ -138,8 +138,9 @@ const ExcelExport = {
     });
 
     // --- Data rows ---
+    // Geplande blokken worden niet geëxporteerd — enkel werkelijke activiteiten
     r = 5;
-    const sorted = [...acts].sort((a, b) => a.startMinutes - b.startMinutes);
+    const sorted = [...acts].filter(a => !isPlanned(a)).sort((a, b) => a.startMinutes - b.startMinutes);
     let energyMarkerInserted = false;
     let dataRowIdx = 0;
 
@@ -231,7 +232,8 @@ const ExcelExport = {
     }
 
     // --- DAGTOTAAL row ---
-    const total = acts.reduce((s, a) => s + calcPoints(a.name, a.durationMinutes), 0);
+    // Som van werkelijke (niet-geplande) blokken, consistent met sorted hierboven
+    const total = sorted.reduce((s, a) => s + calcPoints(a.name, a.durationMinutes), 0);
     const totStyle = {
       font: this.mkFont({ sz: 11, bold: true }),
       fill: F.gray,
