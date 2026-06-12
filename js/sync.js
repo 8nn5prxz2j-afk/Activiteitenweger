@@ -124,23 +124,40 @@ const Sync = {
   // lokale data succesvol naar de nieuwe room is gepusht. Faalt de push (offline,
   // permission) → niets wijzigen, oude code behouden, bij volgende start opnieuw proberen.
   // Dataverlies is daardoor uitgesloten.
+  //
+  // BELANGRIJK: alleen het toestel dat de oude room nog gevuld aantreft mag
+  // migreren. Is de oude room al leeg/weg, dan heeft een ánder toestel de
+  // migratie al gedaan — dan GEEN eigen room aanmaken (anders eindigen twee
+  // toestellen elk in hun eigen room), maar vragen om de nieuwe code.
   migrateLegacyCode() {
     if (!this.db || this.migrating) return;
     const oldCode = this.syncCode;
     if (!oldCode || oldCode.length >= this.CODE_LEN) return;
     this.migrating = true;
 
-    // Eerst de oude room binnenhalen en mergen, zodat recente wijzigingen van
+    // Eerst de oude room lezen en mergen, zodat recente wijzigingen van
     // ANDERE toestellen niet verloren gaan wanneer de oude room straks
     // verwijderd wordt. Pas daarna de (gemergde) lokale data pushen.
-    // Mislukt de pull → migratie afbreken, oude code behouden, retry volgende start.
-    this.pullAll((err) => {
-      if (err) {
+    const ref = this.db.ref(`rooms/${oldCode}`);
+    ref.once('value', (snapshot) => {
+      const remote = snapshot.val();
+      if (!remote) {
+        // Oude room is leeg: een ander toestel migreerde al weg.
+        // Niet zelf migreren — gebruiker moet de nieuwe code invoeren.
         this.migrating = false;
-        this.startListening();
+        this.notifyExpiredCode();
+        this.updateUI();
         return;
       }
+      this.mergeRemoteData(remote);
       this._pushToNewRoom(oldCode);
+    }, (err) => {
+      // Pull mislukt (offline/permission) → migratie afbreken, oude code
+      // behouden, op de oude room blijven luisteren, retry volgende start.
+      console.error('Sync-migratie: oude room lezen mislukt — oude code behouden:', err);
+      this.migrating = false;
+      this.startListening();
+      this.setError(true);
     });
   },
 
