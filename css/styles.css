@@ -702,6 +702,109 @@ body {
   }
 }
 
+/* ---- Slim inplannen: knoppen ---- */
+/* Knop in de week-samenvattingsbalk */
+.wsb-plan-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wsb-plan-btn:hover { background: var(--surface-2); }
+.wsb-plan-btn:active { background: var(--surface-3); }
+
+/* Knop in het activiteit-modal */
+.btn-plan-this {
+  width: 100%;
+  margin: 4px 0 8px;
+  padding: 9px 12px;
+  border: 1px dashed var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-plan-this:hover { background: var(--surface-2); }
+
+/* ---- Slim inplannen: modal ---- */
+.planner-intro {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+/* De activiteit-keuzelijst in de planner: begrensde hoogte, scrollbaar */
+/* Dubbele klasse-selector zodat dit wint van de algemene .activity-picker
+   (incl. de 70vh mobiel-variant verderop in dit bestand) */
+.activity-picker.planner-picker {
+  max-height: 30vh;
+  overflow-y: auto;
+}
+/* De planner-modal zelf mag nooit hoger dan het scherm — intern scrollen */
+.planner-modal {
+  max-height: 92vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cat-item.planner-pick-active {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+.planner-preview {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+/* Voorstel-blok met de dag-voor-dag verdeling */
+.planner-result {
+  margin: 4px 0 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--green-light);
+  border: 1px solid var(--green);
+}
+.planner-result-warn {
+  background: var(--orange-light);
+  border-color: var(--orange);
+}
+.planner-result-fail {
+  background: var(--red-light);
+  border-color: var(--red);
+}
+.planner-rows { margin-bottom: 8px; }
+.planner-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.planner-row:last-child { border-bottom: none; }
+.planner-row-date { font-weight: 600; color: var(--text); flex: 1; }
+.planner-row-dur  { color: var(--text-secondary); }
+.planner-row-pts  { font-weight: 600; color: var(--text); min-width: 56px; text-align: right; }
+.planner-reason {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
 /* ---- Month View ---- */
 .month-view {
   padding: 16px;

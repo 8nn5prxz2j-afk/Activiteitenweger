@@ -278,6 +278,14 @@ const App = {
     const showToggle = isToday || isFuture;
     toggleGroup.style.display = showToggle ? '' : 'none';
 
+    // "Slim inplannen"-knop: alleen voor vandaag/toekomst. Onthoud de startdag
+    // zodat de planner vanaf de juiste dag voorstelt.
+    const planBtn = document.getElementById('btnPlanThis');
+    if (planBtn) {
+      planBtn.style.display = showToggle ? '' : 'none';
+      this._modalDayKey = dayKey;
+    }
+
     // Bepaal initiële status: bij bewerken de huidige waarde; anders dag-default
     let initStatus = 'done';
     if (opts.status === 'planned') {
@@ -323,6 +331,18 @@ const App = {
 
   closeModal() {
     document.getElementById('modal').classList.remove('open');
+  },
+
+  // Sluit het activiteit-modal en opent de planner met de al gekozen
+  // activiteitsnaam en startdag (de huidige dag-view, of vandaag).
+  planThisActivity() {
+    const name = document.getElementById('actSelect').value;
+    const dur = parseInt(document.getElementById('actDuration').value) || 60;
+    const fromDayKey = (this._modalDayKey && this._modalDayKey >= todayStr())
+      ? this._modalDayKey
+      : todayStr();
+    this.closeModal();
+    Planner.open({ name, minutes: dur, fromDayKey });
   },
 
   updateModalPreview() {

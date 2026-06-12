@@ -1,4 +1,4 @@
-const CACHE_NAME = 'activiteitenweger-v27';
+const CACHE_NAME = 'activiteitenweger-v28';
 // Use relative paths so it works both locally and on GitHub Pages
 const ASSETS = [
   './',
@@ -13,6 +13,7 @@ const ASSETS = [
   './js/chart-view.js',
   './js/sync.js',
   './js/onboarding.js',
+  './js/planner.js',
   './js/app.js',
   './manifest.json',
   // CDN-scripts mee-cachen zodat Grafiek, Sync en Export ook offline werken

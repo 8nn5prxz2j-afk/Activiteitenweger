@@ -73,6 +73,7 @@ const WeekView = {
           <div class="wsb-fill-planned" style="left:${wActPct}%;width:${wPlanPct}%;background:${wFillColor}"></div>
         </div>
         ${wsbWarnHtml}
+        <button class="wsb-plan-btn" onclick="Planner.open()">📅 Slim inplannen</button>
       </div>`;
 
     // ---- Dagheaders ----

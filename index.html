@@ -73,6 +73,8 @@
         </div>
       </div>
       <div class="form-group" id="previewPoints" style="font-size:14px;font-weight:500;"></div>
+      <!-- Slim inplannen: alleen zichtbaar voor vandaag/toekomst -->
+      <button class="btn-plan-this" id="btnPlanThis" style="display:none" onclick="App.planThisActivity()">📅 Slim inplannen over meerdere dagen</button>
       <div class="modal-actions">
         <button class="btn btn-danger" id="btnDelete" style="display:none;margin-right:auto;" onclick="App.deleteModal()">Verwijder</button>
         <button class="btn btn-secondary" onclick="App.closeModal()">Annuleren</button>
@@ -91,6 +93,7 @@
   <script src="js/chart-view.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/onboarding.js"></script>
+  <script src="js/planner.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Populate activity select -->
